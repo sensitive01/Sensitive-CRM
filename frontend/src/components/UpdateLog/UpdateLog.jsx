@@ -10,21 +10,21 @@
 
 //     // Dropdown values for disposition
 //     const dispositionOptions = [
-//         'No requirements', 
-//         'Callback', 
-//         'Busy', 
-//         'Disconnected', 
-//         'RNR / Voicemail', 
-//         'Not interested', 
-//         'Request Quote', 
-//         'Quotation Sent', 
-//         'Follow up', 
-//         'Invalid Number', 
-//         'Taken outside', 
-//         'Requirement on hold', 
-//         'Escalated', 
-//         'Schedule Meeting', 
-//         'Deal Closed', 
+//         'No requirements',
+//         'Callback',
+//         'Busy',
+//         'Disconnected',
+//         'RNR / Voicemail',
+//         'Not interested',
+//         'Request Quote',
+//         'Quotation Sent',
+//         'Follow up',
+//         'Invalid Number',
+//         'Taken outside',
+//         'Requirement on hold',
+//         'Escalated',
+//         'Schedule Meeting',
+//         'Deal Closed',
 //         'Others'
 //     ];
 
@@ -63,10 +63,10 @@
 
 //     const handleSubmit = async (e) => {
 //         e.preventDefault();
-        
+
 //         const method = isUpdating ? 'PUT' : 'POST';
 //         const url = isUpdating ? `/api/disposition/${dispositionId}` : '/api/disposition';
-        
+
 //         try {
 //             const response = await fetch(url, {
 //                 method,
@@ -168,7 +168,7 @@
 
 //     const fetchLeadData = async () => {
 //       try {
-//         const response = await axios.get(https://sensitivetechcrm.onrender.com/leads/getlead/${id});
+//         const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/leads/getlead/${id}`);
 //         console.log(response);
 //         if (response.status === 200) {
 //           setLead(response.data);
@@ -196,8 +196,8 @@
 
 //     try {
 //       const response = id
-//         ? await axios.put(https://sensitivetechcrm.onrender.com/leads/update/${id}, lead)
-//         : await axios.post(https://sensitivetechcrm.onrender.com/leads/create, lead);
+//         ? await axios.put(`${import.meta.env.VITE_BASE_URL}/leads/update/${id}`, lead)
+//         : await axios.post(`${import.meta.env.VITE_BASE_URL}/leads/create`, lead);
 
 //       if (response.status === 200 || response.status === 201) {
 //         alert("Lead data submitted successfully!");

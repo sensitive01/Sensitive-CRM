@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Camera } from 'lucide-react';
-import { useNavigate } from 'react-router-dom'; 
+import React, { useState, useRef, useEffect } from "react";
+import { Camera } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ const EmployeeAttendance = () => {
   const [attendanceDetails] = useState({
     employeeId: "",
     employeeName: "",
-    date: new Date().toLocaleDateString('en-GB'),
+    date: new Date().toLocaleDateString("en-GB"),
     status: "Present",
     logintime: "",
   });
@@ -17,7 +17,7 @@ const EmployeeAttendance = () => {
   const [cameraState, setCameraState] = useState({
     isActive: false,
     isLoading: false,
-    error: null
+    error: null,
   });
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -34,20 +34,20 @@ const EmployeeAttendance = () => {
 
   const stopCamera = () => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => {
+      streamRef.current.getTracks().forEach((track) => {
         track.stop();
       });
       streamRef.current = null;
     }
-    
+
     if (videoRef.current && videoRef.current.srcObject) {
       videoRef.current.srcObject = null;
     }
-    
-    setCameraState(prev => ({
+
+    setCameraState((prev) => ({
       ...prev,
       isActive: false,
-      isLoading: false
+      isLoading: false,
     }));
   };
 
@@ -58,38 +58,38 @@ const EmployeeAttendance = () => {
       setCameraState({
         isActive: false,
         isLoading: false,
-        error: "Camera not ready. Please try again."
+        error: "Camera not ready. Please try again.",
       });
       return;
     }
-    
+
     setCameraState({
       isActive: false,
       isLoading: true,
-      error: null
+      error: null,
     });
-    
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'user',
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "user",
           width: { ideal: 640 },
-          height: { ideal: 480 }
-        } 
+          height: { ideal: 480 },
+        },
       });
-      
+
       streamRef.current = stream;
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await new Promise((resolve) => {
           videoRef.current.onloadedmetadata = resolve;
         });
-        
+
         setCameraState({
           isActive: true,
           isLoading: false,
-          error: null
+          error: null,
         });
       }
     } catch (error) {
@@ -98,7 +98,7 @@ const EmployeeAttendance = () => {
       setCameraState({
         isActive: false,
         isLoading: false,
-        error: error.message || "Failed to access camera"
+        error: error.message || "Failed to access camera",
       });
     }
   };
@@ -111,7 +111,13 @@ const EmployeeAttendance = () => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         stopCamera();
-      } else if (isMounted && !photo && !submittedData && !cameraState.isActive && !cameraState.isLoading) {
+      } else if (
+        isMounted &&
+        !photo &&
+        !submittedData &&
+        !cameraState.isActive &&
+        !cameraState.isLoading
+      ) {
         initializeCamera();
       }
     };
@@ -120,18 +126,24 @@ const EmployeeAttendance = () => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [isMounted, photo, submittedData, cameraState.isActive, cameraState.isLoading]);
+  }, [
+    isMounted,
+    photo,
+    submittedData,
+    cameraState.isActive,
+    cameraState.isLoading,
+  ]);
   const capturePhoto = () => {
     if (videoRef.current && canvasRef.current && cameraState.isActive) {
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d");
       const width = 320;
       const height = 240;
-      
+
       canvas.width = width;
       canvas.height = height;
       context.drawImage(videoRef.current, 0, 0, width, height);
-      const dataURL = canvas.toDataURL("image/jpeg", 0.7); 
+      const dataURL = canvas.toDataURL("image/jpeg", 0.7);
       setPhoto(dataURL);
       stopCamera();
     }
@@ -147,39 +159,42 @@ const EmployeeAttendance = () => {
       alert("Please capture a photo before submitting.");
       return;
     }
-    
+
     setIsSubmitting(true);
-  
+
     const currentDate = new Date();
-    const formattedDate = currentDate.toISOString().split('T')[0];
+    const formattedDate = currentDate.toISOString().split("T")[0];
     const formattedTime = currentDate.toLocaleTimeString();
-  
+
     const submissionData = {
       photo,
-      employeeId: employeeId || "Unknown", 
-      employeeName: attendanceDetails.employeeName || "Unknown", 
-      date: formattedDate, 
-      status: "Present", 
+      employeeId: employeeId || "Unknown",
+      employeeName: attendanceDetails.employeeName || "Unknown",
+      date: formattedDate,
+      status: "Present",
       logintime: formattedTime,
     };
-  
+
     try {
-      const response = await fetch("https://sensitivetechcrm.onrender.com/attendance/create", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${import.meta.env.VITE_BASE_URL}/attendance/create`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          mode: "cors",
+          credentials: "same-origin",
+          body: JSON.stringify(submissionData),
         },
-        mode: 'cors', 
-        credentials: 'same-origin', 
-        body: JSON.stringify(submissionData),
-      });
-  
+      );
+
       if (response.ok) {
         const result = await response.json();
         alert("Attendance submitted successfully!");
         setSubmittedData(result.attendance);
         setTimeout(() => {
-          navigate('/attendance-table');
+          navigate("/attendance-table");
         }, 1500);
       } else {
         const errorText = await response.text();
@@ -194,7 +209,9 @@ const EmployeeAttendance = () => {
       }
     } catch (error) {
       console.error("Error submitting attendance:", error);
-      alert("Error submitting attendance. Please try again or contact support.");
+      alert(
+        "Error submitting attendance. Please try again or contact support.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -225,7 +242,7 @@ const EmployeeAttendance = () => {
                 Recapture
               </button>
             )}
-            
+
             {(cameraState.error || cameraState.isLoading) && (
               <button
                 onClick={initializeCamera}
@@ -243,37 +260,41 @@ const EmployeeAttendance = () => {
           )}
 
           <div className="flex justify-center">
-            <video 
-              ref={videoRef} 
-              autoPlay 
+            <video
+              ref={videoRef}
+              autoPlay
               playsInline
               muted
-              className={`fullscreen-video ${!cameraState.isActive ? 'hidden' : ''}`}
+              className={`fullscreen-video ${!cameraState.isActive ? "hidden" : ""}`}
             ></video>
           </div>
-          
+
           {cameraState.isLoading && (
             <div className="text-center p-4">
               <p>Initializing camera...</p>
             </div>
           )}
-          
+
           <canvas ref={canvasRef} className="hidden"></canvas>
-          
+
           {photo && (
             <div className="flex justify-center mt-6">
-              <img src={photo} alt="Captured" className="w-64 h-64 rounded-full object-cover shadow-lg" />
+              <img
+                src={photo}
+                alt="Captured"
+                className="w-64 h-64 rounded-full object-cover shadow-lg"
+              />
             </div>
           )}
-          
+
           {photo && (
             <div className="flex justify-center mt-6">
-              <button 
-                onClick={handleSubmit} 
+              <button
+                onClick={handleSubmit}
                 disabled={isSubmitting}
-                className={`${isSubmitting ? 'bg-gray-400' : 'bg-green-500'} text-white p-4 rounded-md`}
+                className={`${isSubmitting ? "bg-gray-400" : "bg-green-500"} text-white p-4 rounded-md`}
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Details'}
+                {isSubmitting ? "Submitting..." : "Submit Details"}
               </button>
             </div>
           )}
@@ -282,7 +303,9 @@ const EmployeeAttendance = () => {
 
       {submittedData && (
         <div className="mt-6 p-6 border rounded-md">
-          <h3 className="text-2xl font-semibold">Submitted Attendance Details</h3>
+          <h3 className="text-2xl font-semibold">
+            Submitted Attendance Details
+          </h3>
           <div className="flex justify-center mt-6">
             <img
               src={submittedData.photo}
@@ -291,11 +314,21 @@ const EmployeeAttendance = () => {
             />
           </div>
           <ul className="mt-4">
-            <li><strong>Employee ID:</strong> {submittedData.employeeId}</li>
-            <li><strong>Name:</strong> {submittedData.employeeName}</li>
-            <li><strong>Date:</strong> {submittedData.date}</li>
-            <li><strong>Status:</strong> {submittedData.status}</li>
-            <li><strong>Login Time:</strong> {submittedData.logintime}</li>
+            <li>
+              <strong>Employee ID:</strong> {submittedData.employeeId}
+            </li>
+            <li>
+              <strong>Name:</strong> {submittedData.employeeName}
+            </li>
+            <li>
+              <strong>Date:</strong> {submittedData.date}
+            </li>
+            <li>
+              <strong>Status:</strong> {submittedData.status}
+            </li>
+            <li>
+              <strong>Login Time:</strong> {submittedData.logintime}
+            </li>
           </ul>
           <div className="flex justify-center mt-6">
             {/* <button 

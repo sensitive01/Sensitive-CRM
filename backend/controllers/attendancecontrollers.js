@@ -34,6 +34,7 @@ exports.createAttendance = async (req, res) => {
 exports.getAllAttendance = async (req, res) => { 
     try { 
         const { id } = req.params; 
+        console.log("GET Attendance Records:", id); 
         const empdata = await employeeSchema.findById(id, { role: 1 }); 
 
         if (!empdata) { 

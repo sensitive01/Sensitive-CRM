@@ -1,80 +1,80 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const EmployeeForm = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [isPermanentAddressSame, setIsPermanentAddressSame] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [profileImagePreview, setProfileImagePreview] = useState(null);
   const [formData, setFormData] = useState({
-    role: '',
-    empType: '',
-    workMode: '',
-    shiftType: '',
-    salary: '',
-    empId: '',
-    name: '',
-    gender: '',
-    dob: '',
-    email: '',
-    officeEmail: '',
-    alternateEmail: '',
-    contactNumber: '',
-    alternateContact: '',
-    department: '',
-    designation: '',
-    idProofType: '',
-    idProofNumber: '',
+    role: "",
+    empType: "",
+    workMode: "",
+    shiftType: "",
+    salary: "",
+    empId: "",
+    name: "",
+    gender: "",
+    dob: "",
+    email: "",
+    officeEmail: "",
+    alternateEmail: "",
+    contactNumber: "",
+    alternateContact: "",
+    department: "",
+    designation: "",
+    idProofType: "",
+    idProofNumber: "",
     idProofFile: null,
-    qualification: '',
-    expertise: '',
-    experience: '',
+    qualification: "",
+    expertise: "",
+    experience: "",
     resume: null,
-    doj: '',
-    maritalStatus: '',
+    doj: "",
+    maritalStatus: "",
     presentAddress: {
-      addressLine: '',
-      area: '',
-      city: '',
-      state: '',
-      pincode: '',
-      landmark: ''
+      addressLine: "",
+      area: "",
+      city: "",
+      state: "",
+      pincode: "",
+      landmark: "",
     },
     permanentAddress: {
-      addressLine: '',
-      area: '',
-      city: '',
-      state: '',
-      pincode: '',
-      landmark: ''
+      addressLine: "",
+      area: "",
+      city: "",
+      state: "",
+      pincode: "",
+      landmark: "",
     },
-    addressProofType: '',
-    addressProofNumber: '',
+    addressProofType: "",
+    addressProofNumber: "",
     addressProofFile: null,
-    password: '',
+    password: "",
     profileImage: null,
-    shiftStartTime: '',
-    shiftEndTime: '',
-    status: 'Active'
+    shiftStartTime: "",
+    shiftEndTime: "",
+    status: "Active",
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: value
+      [name]: value,
     }));
   };
   const handleFileChange = (e) => {
     const { name, files } = e.target;
-    if (name === 'profileImage') {
+    if (name === "profileImage") {
       const file = files[0];
       setFormData((prevData) => ({
         ...prevData,
-        [name]: file
+        [name]: file,
       }));
       if (file) {
         const reader = new FileReader();
@@ -88,7 +88,7 @@ const EmployeeForm = () => {
     } else {
       setFormData((prevData) => ({
         ...prevData,
-        [name]: files[0]
+        [name]: files[0],
       }));
     }
   };
@@ -99,22 +99,23 @@ const EmployeeForm = () => {
       ...prevData,
       [type]: {
         ...prevData[type],
-        [name]: value
-      }
+        [name]: value,
+      },
     }));
   };
 
-
   const fetchAddressDetails = async (pincode, addressType) => {
     if (!/^[1-9][0-9]{5}$/.test(pincode)) {
-      alert('Please enter a valid 6-digit pincode.');
+      alert("Please enter a valid 6-digit pincode.");
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await axios.get(`https://sensitivetechcrm.onrender.com/getaddressbypincode/${pincode}`);
-      console.log('API Response:', response.data);
+      const response = await axios.get(
+        `${import.meta.env.VITE_BASE_URL}/getaddressbypincode/${pincode}`,
+      );
+      console.log("API Response:", response.data);
 
       if (response.data.success && response.data.address) {
         const { area, city, state } = response.data.address;
@@ -122,22 +123,24 @@ const EmployeeForm = () => {
           ...prevData,
           [addressType]: {
             ...prevData[addressType],
-            area: area || '',
-            city: city || '',
-            state: state || ''
-          }
+            area: area || "",
+            city: city || "",
+            state: state || "",
+          },
         }));
       } else {
-        alert('Invalid Pincode or API Error!');
+        alert("Invalid Pincode or API Error!");
       }
     } catch (error) {
-      console.error('Error fetching address details:', error.response ? error.response.data : error.message);
-      alert('Failed to fetch address details. Please try again later.');
+      console.error(
+        "Error fetching address details:",
+        error.response ? error.response.data : error.message,
+      );
+      alert("Failed to fetch address details. Please try again later.");
     } finally {
       setIsLoading(false);
     }
   };
-
 
   const handlePincodeChange = (e, addressType) => {
     const { name, value } = e.target;
@@ -156,29 +159,32 @@ const EmployeeForm = () => {
     if (e.target.checked) {
       setFormData((prevData) => ({
         ...prevData,
-        permanentAddress: { ...prevData.presentAddress }
+        permanentAddress: { ...prevData.presentAddress },
       }));
     } else {
       setFormData((prevData) => ({
         ...prevData,
         permanentAddress: {
-          addressLine: '',
-          area: '',
-          city: '',
-          state: '',
-          pincode: '',
-          landmark: ''
-        }
+          addressLine: "",
+          area: "",
+          city: "",
+          state: "",
+          pincode: "",
+          landmark: "",
+        },
       }));
     }
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formDataToSubmit = new FormData();
-    Object.keys(formData).forEach(key => {
-      if (key === 'presentAddress' || key === 'permanentAddress') {
-        Object.keys(formData[key]).forEach(addressKey => {
-          formDataToSubmit.append(`${key}[${addressKey}]`, formData[key][addressKey]);
+    Object.keys(formData).forEach((key) => {
+      if (key === "presentAddress" || key === "permanentAddress") {
+        Object.keys(formData[key]).forEach((addressKey) => {
+          formDataToSubmit.append(
+            `${key}[${addressKey}]`,
+            formData[key][addressKey],
+          );
         });
       } else if (formData[key] instanceof File) {
         formDataToSubmit.append(key, formData[key]);
@@ -189,13 +195,13 @@ const EmployeeForm = () => {
 
     try {
       const response = await axios.post(
-        "https://sensitivetechcrm.onrender.com/createemployee",
+        `${import.meta.env.VITE_BASE_URL}/createemployee`,
         formDataToSubmit,
         {
           headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
+            "Content-Type": "multipart/form-data",
+          },
+        },
       );
 
       console.log("Response:", response.data);
@@ -205,10 +211,11 @@ const EmployeeForm = () => {
       localStorage.setItem("empEmail", formData.email);
       localStorage.setItem("empPassword", formData.password);
       localStorage.setItem("role", formData.role);
-
     } catch (error) {
       console.error("Error:", error.response ? error.response.data : error);
-      alert(`Failed to submit the form: ${error.response ? error.response.data.error : 'Unknown error'}`);
+      alert(
+        `Failed to submit the form: ${error.response ? error.response.data.error : "Unknown error"}`,
+      );
     }
   };
 
@@ -249,7 +256,7 @@ const EmployeeForm = () => {
                     type="radio"
                     name="gender"
                     value="Male"
-                    checked={formData.gender === 'Male'}
+                    checked={formData.gender === "Male"}
                     onChange={handleChange}
                     className="mr-2"
                   />
@@ -260,7 +267,7 @@ const EmployeeForm = () => {
                     type="radio"
                     name="gender"
                     value="Female"
-                    checked={formData.gender === 'Female'}
+                    checked={formData.gender === "Female"}
                     onChange={handleChange}
                     className="mr-2"
                   />
@@ -271,7 +278,7 @@ const EmployeeForm = () => {
                     type="radio"
                     name="gender"
                     value="Other"
-                    checked={formData.gender === 'Other'}
+                    checked={formData.gender === "Other"}
                     onChange={handleChange}
                     className="mr-2"
                   />
@@ -642,7 +649,7 @@ const EmployeeForm = () => {
                 type="text"
                 name="addressLine"
                 value={formData.presentAddress.addressLine}
-                onChange={(e) => handleAddressChange(e, 'presentAddress')}
+                onChange={(e) => handleAddressChange(e, "presentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Address Line"
               />
@@ -650,7 +657,7 @@ const EmployeeForm = () => {
                 type="text"
                 name="area"
                 value={formData.presentAddress.area}
-                onChange={(e) => handleAddressChange(e, 'presentAddress')}
+                onChange={(e) => handleAddressChange(e, "presentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Area"
               />
@@ -658,7 +665,7 @@ const EmployeeForm = () => {
                 type="text"
                 name="city"
                 value={formData.presentAddress.city}
-                onChange={(e) => handleAddressChange(e, 'presentAddress')}
+                onChange={(e) => handleAddressChange(e, "presentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="City"
                 readOnly
@@ -667,7 +674,7 @@ const EmployeeForm = () => {
                 type="text"
                 name="state"
                 value={formData.presentAddress.state}
-                onChange={(e) => handleAddressChange(e, 'presentAddress')}
+                onChange={(e) => handleAddressChange(e, "presentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="State"
                 readOnly
@@ -676,7 +683,7 @@ const EmployeeForm = () => {
                 type="text"
                 name="pincode"
                 value={formData.presentAddress.pincode}
-                onChange={(e) => handlePincodeChange(e, 'presentAddress')}
+                onChange={(e) => handlePincodeChange(e, "presentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Pincode"
               />
@@ -684,7 +691,7 @@ const EmployeeForm = () => {
                 type="text"
                 name="landmark"
                 value={formData.presentAddress.landmark}
-                onChange={(e) => handleAddressChange(e, 'presentAddress')}
+                onChange={(e) => handleAddressChange(e, "presentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Landmark"
               />
@@ -696,7 +703,7 @@ const EmployeeForm = () => {
                 type="text"
                 name="addressLine"
                 value={formData.permanentAddress.addressLine}
-                onChange={(e) => handleAddressChange(e, 'permanentAddress')}
+                onChange={(e) => handleAddressChange(e, "permanentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Address Line"
                 disabled={isPermanentAddressSame}
@@ -705,7 +712,7 @@ const EmployeeForm = () => {
                 type="text"
                 name="area"
                 value={formData.permanentAddress.area}
-                onChange={(e) => handleAddressChange(e, 'permanentAddress')}
+                onChange={(e) => handleAddressChange(e, "permanentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Area"
                 disabled={isPermanentAddressSame}
@@ -714,7 +721,7 @@ const EmployeeForm = () => {
                 type="text"
                 name="city"
                 value={formData.permanentAddress.city}
-                onChange={(e) => handleAddressChange(e, 'permanentAddress')}
+                onChange={(e) => handleAddressChange(e, "permanentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="City"
                 readOnly
@@ -724,7 +731,7 @@ const EmployeeForm = () => {
                 type="text"
                 name="state"
                 value={formData.permanentAddress.state}
-                onChange={(e) => handleAddressChange(e, 'permanentAddress')}
+                onChange={(e) => handleAddressChange(e, "permanentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="State"
                 readOnly
@@ -734,7 +741,7 @@ const EmployeeForm = () => {
                 type="text"
                 name="pincode"
                 value={formData.permanentAddress.pincode}
-                onChange={(e) => handlePincodeChange(e, 'permanentAddress')}
+                onChange={(e) => handlePincodeChange(e, "permanentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Pincode"
                 disabled={isPermanentAddressSame}
@@ -743,7 +750,7 @@ const EmployeeForm = () => {
                 type="text"
                 name="landmark"
                 value={formData.permanentAddress.landmark}
-                onChange={(e) => handleAddressChange(e, 'permanentAddress')}
+                onChange={(e) => handleAddressChange(e, "permanentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Landmark"
                 disabled={isPermanentAddressSame}
@@ -771,7 +778,9 @@ const EmployeeForm = () => {
             </div>
 
             <div>
-              <label className="block font-semibold">Address Proof Number</label>
+              <label className="block font-semibold">
+                Address Proof Number
+              </label>
               <input
                 type="text"
                 name="addressProofNumber"
@@ -782,7 +791,9 @@ const EmployeeForm = () => {
             </div>
 
             <div>
-              <label className="block font-semibold">Upload Address Proof</label>
+              <label className="block font-semibold">
+                Upload Address Proof
+              </label>
               <input
                 type="file"
                 name="addressProofFile"
@@ -813,7 +824,12 @@ const EmployeeForm = () => {
             </div>
 
             <div className="col-span-3 flex justify-center">
-              <button type="submit" className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-md">Submit</button>
+              <button
+                type="submit"
+                className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-md"
+              >
+                Submit
+              </button>
             </div>
           </div>
         </form>

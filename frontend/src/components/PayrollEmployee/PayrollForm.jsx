@@ -31,7 +31,7 @@ const PayrollForm = ({ onSubmit }) => {
       console.log("Fetching data for employee:", id);
 
       axios
-        .get(`https://sensitivetechcrm.onrender.com/employeedatabyid/${id}`)
+        .get(`${import.meta.env.VITE_BASE_URL}/employeedatabyid/${id}`)
         .then((response) => {
           console.log("API Response:", response.data);
 
@@ -66,21 +66,27 @@ const PayrollForm = ({ onSubmit }) => {
     }
   }, [id]);
 
-
-
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     setFormData((prevData) => ({
       ...prevData,
-      [name]: name === "lateMins" ? value : ["name", "empId", "branch"].includes(name) ? value : Number(value),
+      [name]:
+        name === "lateMins"
+          ? value
+          : ["name", "empId", "branch"].includes(name)
+            ? value
+            : Number(value),
     }));
   };
 
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    const payable = formData.salary + formData.allowances - formData.deductions - formData.advance;
+    const payable =
+      formData.salary +
+      formData.allowances -
+      formData.deductions -
+      formData.advance;
     const updatedData = { ...formData, payable };
 
     if (!id) {
@@ -90,11 +96,14 @@ const PayrollForm = ({ onSubmit }) => {
 
     setLoading(true);
     axios
-      .put(`https://sensitivetechcrm.onrender.com/employeedataupdateid/${id}`, updatedData)
+      .put(
+        `${import.meta.env.VITE_BASE_URL}/employeedataupdateid/${id}`,
+        updatedData,
+      )
       .then((response) => {
         console.log("Payroll updated successfully:", response.data);
         alert("Payroll updated successfully!");
-        navigate("/payroll-table"); 
+        navigate("/payroll-table");
       })
       .catch((error) => {
         console.error("Error updating payroll:", error);
@@ -103,12 +112,17 @@ const PayrollForm = ({ onSubmit }) => {
       .finally(() => setLoading(false));
   };
 
-
   return (
     <div className="bg-white p-6 rounded-lg shadow mb-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-24">Add Payroll Record</h2>
+      <h2 className="text-xl font-semibold text-gray-800 mb-4 mt-24">
+        Add Payroll Record
+      </h2>
 
-      {loading ? <p>Loading...</p> : error ? <p className="text-red-600">{error}</p> : null}
+      {loading ? (
+        <p>Loading...</p>
+      ) : error ? (
+        <p className="text-red-600">{error}</p>
+      ) : null}
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           {Object.keys(formData).map((key) => {
@@ -119,7 +133,11 @@ const PayrollForm = ({ onSubmit }) => {
                   {key.charAt(0).toUpperCase() + key.slice(1)}
                 </label>
                 <input
-                  type={["name", "empId", "branch"].includes(key) ? "text" : "number"}
+                  type={
+                    ["name", "empId", "branch"].includes(key)
+                      ? "text"
+                      : "number"
+                  }
                   name={key}
                   value={formData[key]}
                   onChange={handleChange}
@@ -150,10 +168,8 @@ const PayrollForm = ({ onSubmit }) => {
           >
             Update Payroll
           </button>
-
         </div>
       </form>
-
     </div>
   );
 };

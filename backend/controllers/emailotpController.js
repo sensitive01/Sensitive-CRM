@@ -41,6 +41,8 @@ const sendOTP = async (req, res) => {
       html: `<h2>Your OTP is ${otp}</h2><p>Valid for 5 minutes.</p>`
     });
 
+    console.log("OTP sent successfully",otp);
+
     return res.status(200).json({
       message: "OTP sent successfully"
     });

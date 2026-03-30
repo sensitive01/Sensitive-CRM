@@ -1,43 +1,63 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import axios from 'axios';
-import * as XLSX from 'xlsx';
-import { FaFileDownload, FaFilter } from 'react-icons/fa';
-import { useTable, useGlobalFilter, useSortBy, usePagination } from 'react-table';
-import { useNavigate } from 'react-router-dom';
-
+import React, { useState, useMemo, useEffect } from "react";
+import axios from "axios";
+import * as XLSX from "xlsx";
+import { FaFileDownload, FaFilter } from "react-icons/fa";
+import {
+  useTable,
+  useGlobalFilter,
+  useSortBy,
+  usePagination,
+} from "react-table";
+import { useNavigate } from "react-router-dom";
 
 const LeadEdit = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const [leads, setLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [role, setRole] = useState(localStorage.getItem("role") || "Superadmin");
+  const [role, setRole] = useState(
+    localStorage.getItem("role") || "Superadmin",
+  );
   const [lead, setLead] = useState({
     disposition: "",
     notes: "",
   });
 
   const dispositionOptions = [
-    "No requirements", "Callback", "Busy", "Disconnected", "RNR / Voicemail",
-    "Not interested", "Request Quote", "Quotation Sent", "Follow up",
-    "Invalid Number", "Taken outside", "Requirement on hold", "Escalated",
-    "Schedule Meeting", "Deal Closed", "Others"
+    "No requirements",
+    "Callback",
+    "Busy",
+    "Disconnected",
+    "RNR / Voicemail",
+    "Not interested",
+    "Request Quote",
+    "Quotation Sent",
+    "Follow up",
+    "Invalid Number",
+    "Taken outside",
+    "Requirement on hold",
+    "Escalated",
+    "Schedule Meeting",
+    "Deal Closed",
+    "Others",
   ];
 
   useEffect(() => {
     const fetchLeadData = async () => {
       try {
         const response = await axios.get(
-          "https://sensitivetechcrm.onrender.com/updatelog/getdispositions"
+          `${import.meta.env.VITE_BASE_URL}/updatelog/getdispositions`,
         );
         if (response.status === 200) {
           let data = response.data;
           if (role === "Lead") {
             const today = new Date().toISOString().split("T")[0];
-            data = data.filter(lead => lead.createdAt.split("T")[0] === today);
+            data = data.filter(
+              (lead) => lead.createdAt.split("T")[0] === today,
+            );
           }
           setLeads(data);
         } else {
@@ -55,20 +75,20 @@ const LeadEdit = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setLead(prev => ({ ...prev, [name]: value }));
+    setLead((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "https://sensitivetechcrm.onrender.com/updatelog/disposition",
-        lead
+        `${import.meta.env.VITE_BASE_URL}/updatelog/disposition`,
+        lead,
       );
       if (response.status === 201) {
         alert("Lead data submitted successfully!");
         setLead({ disposition: "", notes: "" });
-        setLeads(prev => [...prev, response.data]);
+        setLeads((prev) => [...prev, response.data]);
       } else {
         alert(`Error: ${response.statusText}`);
       }
@@ -92,20 +112,33 @@ const LeadEdit = () => {
     }
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const filteredData = leads.filter(lead => {
+    const filteredData = leads.filter((lead) => {
       const leadDate = new Date(lead.createdAt);
       return leadDate >= start && leadDate <= end;
     });
     setFilteredLeads(filteredData);
   };
 
-  const columns = useMemo(() => [
-    { Header: 'S.No', accessor: (row, index) => index + 1 },
-    { Header: 'Disposition', accessor: 'disposition' },
-    { Header: 'Notes', accessor: 'notes' },
-    { Header: 'Date', accessor: 'createdAt', Cell: ({ value }) => new Date(value).toLocaleDateString('en-GB'), id: 'date' },
-    { Header: 'Time', accessor: 'createdAt', Cell: ({ value }) => new Date(value).toLocaleTimeString(), id: 'time' }
-  ], [leads]);
+  const columns = useMemo(
+    () => [
+      { Header: "S.No", accessor: (row, index) => index + 1 },
+      { Header: "Disposition", accessor: "disposition" },
+      { Header: "Notes", accessor: "notes" },
+      {
+        Header: "Date",
+        accessor: "createdAt",
+        Cell: ({ value }) => new Date(value).toLocaleDateString("en-GB"),
+        id: "date",
+      },
+      {
+        Header: "Time",
+        accessor: "createdAt",
+        Cell: ({ value }) => new Date(value).toLocaleTimeString(),
+        id: "time",
+      },
+    ],
+    [leads],
+  );
 
   const tableData = filteredLeads.length > 0 ? filteredLeads : leads;
 
@@ -126,13 +159,14 @@ const LeadEdit = () => {
     { columns, data: tableData, initialState: { pageSize: 10 } },
     useGlobalFilter,
     useSortBy,
-    usePagination
+    usePagination,
   );
 
   const { globalFilter, pageIndex } = state;
 
   if (loading) return <div className="text-center mt-24">Loading...</div>;
-  if (error) return <div className="text-center mt-24 text-red-500">{error}</div>;
+  if (error)
+    return <div className="text-center mt-24 text-red-500">{error}</div>;
 
   return (
     <div className="max-w-7xl mx-auto p-4 mt-20">
@@ -149,7 +183,9 @@ const LeadEdit = () => {
         className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white shadow-lg rounded-xl border border-gray-200 hover:shadow-xl transition-all"
       >
         <div>
-          <label className="block font-medium text-gray-700 mb-2">Disposition</label>
+          <label className="block font-medium text-gray-700 mb-2">
+            Disposition
+          </label>
           <select
             name="disposition"
             value={lead.disposition}
@@ -158,7 +194,9 @@ const LeadEdit = () => {
           >
             <option value="">Select Disposition</option>
             {dispositionOptions.map((option, i) => (
-              <option key={i} value={option}>{option}</option>
+              <option key={i} value={option}>
+                {option}
+              </option>
             ))}
           </select>
         </div>
@@ -188,7 +226,6 @@ const LeadEdit = () => {
           >
             Cancel
           </button>
-
         </div>
       </form>
 
@@ -197,8 +234,8 @@ const LeadEdit = () => {
         <div className="relative w-full md:w-64">
           <input
             type="text"
-            value={globalFilter || ''}
-            onChange={e => setGlobalFilter(e.target.value)}
+            value={globalFilter || ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder="Search leads..."
             className="w-full border border-indigo-300 p-3 rounded-lg pl-10 focus:ring-2 focus:ring-indigo-400 transition-all"
           />
@@ -210,13 +247,13 @@ const LeadEdit = () => {
             <input
               type="date"
               value={startDate}
-              onChange={e => setStartDate(e.target.value)}
+              onChange={(e) => setStartDate(e.target.value)}
               className="border border-indigo-300 p-2 rounded-lg"
             />
             <input
               type="date"
               value={endDate}
-              onChange={e => setEndDate(e.target.value)}
+              onChange={(e) => setEndDate(e.target.value)}
               className="border border-indigo-300 p-2 rounded-lg"
             />
             <button
@@ -243,16 +280,24 @@ const LeadEdit = () => {
           <>
             <table {...getTableProps()} className="w-full text-center">
               <thead className="bg-indigo-500 text-white">
-                {headerGroups.map(headerGroup => (
+                {headerGroups.map((headerGroup) => (
                   <tr {...headerGroup.getHeaderGroupProps()}>
-                    {headerGroup.headers.map(column => (
+                    {headerGroup.headers.map((column) => (
                       <th
-                        {...column.getHeaderProps(column.getSortByToggleProps())}
+                        {...column.getHeaderProps(
+                          column.getSortByToggleProps(),
+                        )}
                         className="p-4 cursor-pointer"
                       >
                         <div className="flex items-center justify-center">
-                          {column.render('Header')}
-                          <span>{column.isSorted ? (column.isSortedDesc ? ' 🔽' : ' 🔼') : ''}</span>
+                          {column.render("Header")}
+                          <span>
+                            {column.isSorted
+                              ? column.isSortedDesc
+                                ? " 🔽"
+                                : " 🔼"
+                              : ""}
+                          </span>
                         </div>
                       </th>
                     ))}
@@ -260,12 +305,17 @@ const LeadEdit = () => {
                 ))}
               </thead>
               <tbody {...getTableBodyProps()}>
-                {page.map(row => {
+                {page.map((row) => {
                   prepareRow(row);
                   return (
-                    <tr {...row.getRowProps()} className="border-b hover:bg-indigo-50 transition-colors">
-                      {row.cells.map(cell => (
-                        <td {...cell.getCellProps()} className="p-4">{cell.render('Cell')}</td>
+                    <tr
+                      {...row.getRowProps()}
+                      className="border-b hover:bg-indigo-50 transition-colors"
+                    >
+                      {row.cells.map((cell) => (
+                        <td {...cell.getCellProps()} className="p-4">
+                          {cell.render("Cell")}
+                        </td>
                       ))}
                     </tr>
                   );
@@ -275,7 +325,12 @@ const LeadEdit = () => {
 
             {/* Pagination */}
             <div className="flex justify-between items-center p-4">
-              <span>Page <strong>{pageIndex + 1} of {pageOptions.length}</strong></span>
+              <span>
+                Page{" "}
+                <strong>
+                  {pageIndex + 1} of {pageOptions.length}
+                </strong>
+              </span>
               <div className="space-x-2">
                 <button
                   onClick={() => previousPage()}

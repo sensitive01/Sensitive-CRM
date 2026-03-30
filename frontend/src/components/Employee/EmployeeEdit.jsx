@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useParams,useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useParams, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 
-
 const EmployeeEdit = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const [isPermanentAddressSame, setIsPermanentAddressSame] = useState(false);
   const { id } = useParams();
-  console.log(id)
+  console.log(id);
   const [showPassword, setShowPassword] = useState(false);
   const [profileImagePreview, setProfileImagePreview] = useState(null);
 
@@ -16,92 +15,92 @@ const EmployeeEdit = () => {
     setShowPassword((prev) => !prev);
   };
   const [formData, setFormData] = useState({
-    role: '',
-    empType: '',
-    workMode: '',
-    shiftType: '',
-    salary: '',
-    empId: '',
-    name: '',
-    gender: '',
-    dob: '',
-    dobFormatted: '',
-    email: '',
-    officeEmail: '',
-    alternateEmail: '',
-    contactNumber: '',
-    alternateContact: '',
-    department: '',
-    designation: '',
-    idProofType: '',
-    idProofNumber: '',
+    role: "",
+    empType: "",
+    workMode: "",
+    shiftType: "",
+    salary: "",
+    empId: "",
+    name: "",
+    gender: "",
+    dob: "",
+    dobFormatted: "",
+    email: "",
+    officeEmail: "",
+    alternateEmail: "",
+    contactNumber: "",
+    alternateContact: "",
+    department: "",
+    designation: "",
+    idProofType: "",
+    idProofNumber: "",
     idProofFile: null,
-    qualification: '',
-    expertise: '',
-    experience: '',
+    qualification: "",
+    expertise: "",
+    experience: "",
     resume: null,
-    doj: '',
-    dojFormatted: '',
-    maritalStatus: '',
+    doj: "",
+    dojFormatted: "",
+    maritalStatus: "",
     presentAddress: {
-      addressLine: '',
-      area: '',
-      city: '',
-      state: '',
-      pincode: '',
-      landmark: ''
+      addressLine: "",
+      area: "",
+      city: "",
+      state: "",
+      pincode: "",
+      landmark: "",
     },
     permanentAddress: {
-      addressLine: '',
-      area: '',
-      city: '',
-      state: '',
-      pincode: '',
-      landmark: ''
+      addressLine: "",
+      area: "",
+      city: "",
+      state: "",
+      pincode: "",
+      landmark: "",
     },
-    addressProofType: '',
-    addressProofNumber: '',
+    addressProofType: "",
+    addressProofNumber: "",
     addressProofFile: null,
-    password: '',
-    profileImage: null, 
-    shiftStartTime: '',
-    shiftEndTime: '',
-    status: 'Active'
+    password: "",
+    profileImage: null,
+    shiftStartTime: "",
+    shiftEndTime: "",
+    status: "Active",
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const formatDate = (dateString) => {
-    if (!dateString) return { formatted: '', isoDate: '' };
+    if (!dateString) return { formatted: "", isoDate: "" };
     const dateObj = new Date(dateString);
     const day = String(dateObj.getDate()).padStart(2, "0");
     const month = String(dateObj.getMonth() + 1).padStart(2, "0");
     const year = String(dateObj.getFullYear()).slice(-2);
     return {
       formatted: `${day}/${month}/${year}`,
-      isoDate: dateObj.toISOString().split('T')[0]
+      isoDate: dateObj.toISOString().split("T")[0],
     };
   };
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "dob" || name === "doj") {
       const { formatted, isoDate } = formatDate(value);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         [name]: isoDate,
-        [`${name}Formatted`]: formatted
+        [`${name}Formatted`]: formatted,
       }));
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
   const handleFileChange = (e) => {
     const { name, files } = e.target;
-    if (name === 'profileImage') {
+    if (name === "profileImage") {
       const file = files[0];
       setFormData((prevData) => ({
         ...prevData,
-        [name]: file
+        [name]: file,
       }));
       if (file) {
         const reader = new FileReader();
@@ -115,7 +114,7 @@ const EmployeeEdit = () => {
     } else {
       setFormData((prevData) => ({
         ...prevData,
-        [name]: files[0]
+        [name]: files[0],
       }));
     }
   };
@@ -126,8 +125,8 @@ const EmployeeEdit = () => {
       ...prevData,
       [type]: {
         ...prevData[type],
-        [name]: value
-      }
+        [name]: value,
+      },
     }));
   };
   useEffect(() => {
@@ -135,12 +134,16 @@ const EmployeeEdit = () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `https://sensitivetechcrm.onrender.com/getemployeesbyid/${id}`
+          `${import.meta.env.VITE_BASE_URL}/getemployeesbyid/${id}`,
         );
         console.log(response);
         const employeeData = response.data;
-        const { formatted: dobFormatted, isoDate: dobIso } = formatDate(employeeData.dob);
-        const { formatted: dojFormatted, isoDate: dojIso } = formatDate(employeeData.doj);
+        const { formatted: dobFormatted, isoDate: dobIso } = formatDate(
+          employeeData.dob,
+        );
+        const { formatted: dojFormatted, isoDate: dojIso } = formatDate(
+          employeeData.doj,
+        );
         setFormData((prevData) => ({
           ...prevData,
           ...employeeData,
@@ -149,7 +152,7 @@ const EmployeeEdit = () => {
           doj: dojIso,
           dojFormatted,
         }));
-        
+
         // Set profile image preview if it exists in the fetched data
         if (employeeData.profileImage) {
           setProfileImagePreview(employeeData.profileImage);
@@ -157,7 +160,7 @@ const EmployeeEdit = () => {
       } catch (err) {
         setError(err.message);
       } finally {
-        setLoading(false); 
+        setLoading(false);
       }
     };
 
@@ -169,61 +172,65 @@ const EmployeeEdit = () => {
     if (e.target.checked) {
       setFormData((prevData) => ({
         ...prevData,
-        permanentAddress: { ...prevData.presentAddress }
+        permanentAddress: { ...prevData.presentAddress },
       }));
     } else {
       setFormData((prevData) => ({
         ...prevData,
         permanentAddress: {
-          addressLine: '',
-          area: '',
-          city: '',
-          state: '',
-          pincode: '',
-          landmark: ''
-        }
+          addressLine: "",
+          area: "",
+          city: "",
+          state: "",
+          pincode: "",
+          landmark: "",
+        },
       }));
     }
   };
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  const formDataToSubmit = new FormData();
-  Object.keys(formData).forEach(key => {
-    if (key === 'presentAddress' || key === 'permanentAddress') {
-      Object.keys(formData[key]).forEach(addressKey => {
-        formDataToSubmit.append(`${key}[${addressKey}]`, formData[key][addressKey]);
-      });
-    } else if (formData[key] instanceof File) {
-      formDataToSubmit.append(key, formData[key]);
-    } else {
-      formDataToSubmit.append(key, formData[key]);
-    }
-  });
-
-  try {
-    const response = await axios.patch(
-     `https://sensitivetechcrm.onrender.com/updateemployee/${id}`, 
-      formDataToSubmit,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const formDataToSubmit = new FormData();
+    Object.keys(formData).forEach((key) => {
+      if (key === "presentAddress" || key === "permanentAddress") {
+        Object.keys(formData[key]).forEach((addressKey) => {
+          formDataToSubmit.append(
+            `${key}[${addressKey}]`,
+            formData[key][addressKey],
+          );
+        });
+      } else if (formData[key] instanceof File) {
+        formDataToSubmit.append(key, formData[key]);
+      } else {
+        formDataToSubmit.append(key, formData[key]);
       }
-    );
+    });
 
-    console.log("Response:", response.data);
-    alert("Form submitted successfully!");
-    navigate("/employee-table");
-    localStorage.setItem("empName", formData.name);
-    localStorage.setItem("empEmail", formData.email);
-    localStorage.setItem("empPassword", formData.password);
-    localStorage.setItem("role", formData.role);
+    try {
+      const response = await axios.patch(
+        `${import.meta.env.VITE_BASE_URL}/updateemployee/${id}`,
+        formDataToSubmit,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
 
-  } catch (error) {
-    console.error("Error:", error.response ? error.response.data : error);
-    alert(`Failed to submit the form: ${error.response ? error.response.data.error : 'Unknown error'}`);
-  }
-};
+      console.log("Response:", response.data);
+      alert("Form submitted successfully!");
+      navigate("/employee-table");
+      localStorage.setItem("empName", formData.name);
+      localStorage.setItem("empEmail", formData.email);
+      localStorage.setItem("empPassword", formData.password);
+      localStorage.setItem("role", formData.role);
+    } catch (error) {
+      console.error("Error:", error.response ? error.response.data : error);
+      alert(
+        `Failed to submit the form: ${error.response ? error.response.data.error : "Unknown error"}`,
+      );
+    }
+  };
 
   return (
     <div className="container mx-auto p-6 mt-20">
@@ -263,7 +270,7 @@ const EmployeeEdit = () => {
                     type="radio"
                     name="gender"
                     value="Male"
-                    checked={formData.gender === 'Male'}
+                    checked={formData.gender === "Male"}
                     onChange={handleChange}
                     className="mr-2"
                   />
@@ -274,7 +281,7 @@ const EmployeeEdit = () => {
                     type="radio"
                     name="gender"
                     value="Female"
-                    checked={formData.gender === 'Female'}
+                    checked={formData.gender === "Female"}
                     onChange={handleChange}
                     className="mr-2"
                   />
@@ -285,7 +292,7 @@ const EmployeeEdit = () => {
                     type="radio"
                     name="gender"
                     value="Other"
-                    checked={formData.gender === 'Other'}
+                    checked={formData.gender === "Other"}
                     onChange={handleChange}
                     className="mr-2"
                   />
@@ -537,9 +544,9 @@ const EmployeeEdit = () => {
                 {/* Display existing or newly selected profile image */}
                 {(profileImagePreview || formData.profileImage) && (
                   <div className="w-24 h-24 rounded-full overflow-hidden">
-                    <img 
-                      src={profileImagePreview || formData.profileImage} 
-                      alt="Profile" 
+                    <img
+                      src={profileImagePreview || formData.profileImage}
+                      alt="Profile"
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -585,7 +592,7 @@ const EmployeeEdit = () => {
               {formData.resume ? (
                 <div>
                   <img
-                    src={formData.resume} 
+                    src={formData.resume}
                     alt="Resume"
                     className="w-32 h-32 object-cover"
                   />
@@ -601,7 +608,6 @@ const EmployeeEdit = () => {
                 className="w-full px-4 py-2 border rounded-md"
               />
             </div>
-
 
             <div>
               <label className="block font-semibold">DOJ</label>
@@ -680,7 +686,7 @@ const EmployeeEdit = () => {
                 type="text"
                 name="addressLine"
                 value={formData.presentAddress.addressLine}
-                onChange={(e) => handleAddressChange(e, 'presentAddress')}
+                onChange={(e) => handleAddressChange(e, "presentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Address Line"
               />
@@ -688,7 +694,7 @@ const EmployeeEdit = () => {
                 type="text"
                 name="area"
                 value={formData.presentAddress.area}
-                onChange={(e) => handleAddressChange(e, 'presentAddress')}
+                onChange={(e) => handleAddressChange(e, "presentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Area"
               />
@@ -696,7 +702,7 @@ const EmployeeEdit = () => {
                 type="text"
                 name="city"
                 value={formData.presentAddress.city}
-                onChange={(e) => handleAddressChange(e, 'presentAddress')}
+                onChange={(e) => handleAddressChange(e, "presentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="City"
               />
@@ -704,7 +710,7 @@ const EmployeeEdit = () => {
                 type="text"
                 name="state"
                 value={formData.presentAddress.state}
-                onChange={(e) => handleAddressChange(e, 'presentAddress')}
+                onChange={(e) => handleAddressChange(e, "presentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="State"
               />
@@ -712,7 +718,7 @@ const EmployeeEdit = () => {
                 type="text"
                 name="pincode"
                 value={formData.presentAddress.pincode}
-                onChange={(e) => handleAddressChange(e, 'presentAddress')}
+                onChange={(e) => handleAddressChange(e, "presentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Pincode"
               />
@@ -720,7 +726,7 @@ const EmployeeEdit = () => {
                 type="text"
                 name="landmark"
                 value={formData.presentAddress.landmark}
-                onChange={(e) => handleAddressChange(e, 'presentAddress')}
+                onChange={(e) => handleAddressChange(e, "presentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Landmark"
               />
@@ -732,7 +738,7 @@ const EmployeeEdit = () => {
                 type="text"
                 name="addressLine"
                 value={formData.permanentAddress.addressLine}
-                onChange={(e) => handleAddressChange(e, 'permanentAddress')}
+                onChange={(e) => handleAddressChange(e, "permanentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Address Line"
               />
@@ -740,7 +746,7 @@ const EmployeeEdit = () => {
                 type="text"
                 name="area"
                 value={formData.permanentAddress.area}
-                onChange={(e) => handleAddressChange(e, 'permanentAddress')}
+                onChange={(e) => handleAddressChange(e, "permanentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Area"
               />
@@ -748,7 +754,7 @@ const EmployeeEdit = () => {
                 type="text"
                 name="city"
                 value={formData.permanentAddress.city}
-                onChange={(e) => handleAddressChange(e, 'permanentAddress')}
+                onChange={(e) => handleAddressChange(e, "permanentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="City"
               />
@@ -756,7 +762,7 @@ const EmployeeEdit = () => {
                 type="text"
                 name="state"
                 value={formData.permanentAddress.state}
-                onChange={(e) => handleAddressChange(e, 'permanentAddress')}
+                onChange={(e) => handleAddressChange(e, "permanentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="State"
               />
@@ -764,7 +770,7 @@ const EmployeeEdit = () => {
                 type="text"
                 name="pincode"
                 value={formData.permanentAddress.pincode}
-                onChange={(e) => handleAddressChange(e, 'permanentAddress')}
+                onChange={(e) => handleAddressChange(e, "permanentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Pincode"
               />
@@ -772,7 +778,7 @@ const EmployeeEdit = () => {
                 type="text"
                 name="landmark"
                 value={formData.permanentAddress.landmark}
-                onChange={(e) => handleAddressChange(e, 'permanentAddress')}
+                onChange={(e) => handleAddressChange(e, "permanentAddress")}
                 className="w-full px-4 py-2 border rounded-md"
                 placeholder="Landmark"
               />
@@ -799,7 +805,9 @@ const EmployeeEdit = () => {
             </div>
 
             <div>
-              <label className="block font-semibold">Address Proof Number</label>
+              <label className="block font-semibold">
+                Address Proof Number
+              </label>
               <input
                 type="text"
                 name="addressProofNumber"
@@ -810,11 +818,13 @@ const EmployeeEdit = () => {
             </div>
 
             <div>
-              <label className="block font-semibold">Upload Address Proof</label>
+              <label className="block font-semibold">
+                Upload Address Proof
+              </label>
               {formData.addressProofFile ? (
                 <div>
                   <img
-                    src={formData.addressProofFile} 
+                    src={formData.addressProofFile}
                     alt="idProofFile"
                     className="w-32 h-32 object-cover"
                   />
@@ -851,9 +861,13 @@ const EmployeeEdit = () => {
               </div>
             </div>
 
-
             <div className="col-span-3 flex justify-center">
-              <button type="submit" className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-md">Submit</button>
+              <button
+                type="submit"
+                className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-md"
+              >
+                Submit
+              </button>
             </div>
           </div>
         </form>

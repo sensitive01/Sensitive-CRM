@@ -4,52 +4,116 @@ import { useNavigate } from "react-router-dom";
 import { FaFileDownload, FaFilter } from "react-icons/fa";
 import { deletetheProject } from "../../api/services/projectServices";
 
-
-
 const ProjectDetailsModal = ({ project, onClose, onEdit }) => {
   const [role] = useState(localStorage.getItem("role") || "Superadmin");
 
   const renderArrayData = (array, field) => {
     if (!array || !Array.isArray(array) || array.length === 0) return "N/A";
-    return array.map((item) => item[field]).filter(Boolean).join(", ");
+    return array
+      .map((item) => item[field])
+      .filter(Boolean)
+      .join(", ");
   };
 
   return (
     <div className="fixed inset-0 bg-gray-700 bg-opacity-50 flex justify-center items-start pt-20 z-50 overflow-auto">
       <div className="bg-white rounded-2xl shadow-2xl p-6 w-full sm:w-3/4 md:w-2/3 lg:w-1/2 max-h-[80vh] overflow-y-auto flex flex-col space-y-6">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-4">Project Details</h2>
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-4">
+          Project Details
+        </h2>
 
         <div className="flex flex-col md:flex-row gap-6">
           {/* Left Column */}
           <div className="flex-1 border-l-4 border-blue-400 bg-gray-50 rounded-xl p-4 shadow-sm">
-            <h3 className="text-xl font-semibold mb-3 border-b pb-2">Project Information</h3>
+            <h3 className="text-xl font-semibold mb-3 border-b pb-2">
+              Project Information
+            </h3>
             <div className="space-y-2 text-gray-700">
-              <p><strong>Project Name:</strong> {renderArrayData(project.projectDetails, "projectName")}</p>
-              <p><strong>Tech Stack:</strong> {renderArrayData(project.projectDetails, "techStack")}</p>
-              <p><strong>Type:</strong> {renderArrayData(project.projectDetails, "type")}</p>
-              <p><strong>Category:</strong> {renderArrayData(project.projectDetails, "category")}</p>
-              <p><strong>Domain:</strong> {renderArrayData(project.projectDetails, "domain")}</p>
-              <p><strong>Requirements:</strong> {renderArrayData(project.projectDetails, "requirements")}</p>
-              <p><strong>Description:</strong> {renderArrayData(project.projectDetails, "description")}</p>
-              <p><strong>Designation:</strong> {renderArrayData(project.projectDetails, "designation")}</p>
+              <p>
+                <strong>Project Name:</strong>{" "}
+                {renderArrayData(project.projectDetails, "projectName")}
+              </p>
+              <p>
+                <strong>Tech Stack:</strong>{" "}
+                {renderArrayData(project.projectDetails, "techStack")}
+              </p>
+              <p>
+                <strong>Type:</strong>{" "}
+                {renderArrayData(project.projectDetails, "type")}
+              </p>
+              <p>
+                <strong>Category:</strong>{" "}
+                {renderArrayData(project.projectDetails, "category")}
+              </p>
+              <p>
+                <strong>Domain:</strong>{" "}
+                {renderArrayData(project.projectDetails, "domain")}
+              </p>
+              <p>
+                <strong>Requirements:</strong>{" "}
+                {renderArrayData(project.projectDetails, "requirements")}
+              </p>
+              <p>
+                <strong>Description:</strong>{" "}
+                {renderArrayData(project.projectDetails, "description")}
+              </p>
+              <p>
+                <strong>Designation:</strong>{" "}
+                {renderArrayData(project.projectDetails, "designation")}
+              </p>
             </div>
           </div>
 
           {/* Right Column */}
           <div className="flex-1 border-l-4 border-green-400 bg-gray-50 rounded-xl p-4 shadow-sm">
-            <h3 className="text-xl font-semibold mb-3 border-b pb-2">Additional Details</h3>
+            <h3 className="text-xl font-semibold mb-3 border-b pb-2">
+              Additional Details
+            </h3>
             <div className="space-y-2 text-gray-700">
-              <p><strong>Add On Services:</strong> {renderArrayData(project.projectDetails, "addOnServices")}</p>
-              <p><strong>Duration:</strong> {renderArrayData(project.projectDetails, "duration")}</p>
-              <p><strong>Dependencies:</strong> {renderArrayData(project.projectDetails, "dependencies")}</p>
-              <p><strong>Company Name:</strong> {renderArrayData(project.projectDetails, "companyName")}</p>
-              <p><strong>Task:</strong> {renderArrayData(project.projectDetails, "task")}</p>
-              <p><strong>Quoted Value:</strong> {renderArrayData(project.financialDetails, "quotedValue")}</p>
-              <p><strong>Approved Value:</strong> {renderArrayData(project.financialDetails, "approvedValue")}</p>
-              <p><strong>Payment Terms:</strong> {renderArrayData(project.financialDetails, "paymentTerms")}</p>
-              <p><strong>Assigned To:</strong> {renderArrayData(project.additionalDetails, "assignedTo")}</p>
-              <p><strong>Status:</strong> {renderArrayData(project.additionalDetails, "status")}</p>
-              <p><strong>Created Date:</strong> {renderArrayData(project.additionalDetails, "createdDate")}</p>
+              <p>
+                <strong>Add On Services:</strong>{" "}
+                {renderArrayData(project.projectDetails, "addOnServices")}
+              </p>
+              <p>
+                <strong>Duration:</strong>{" "}
+                {renderArrayData(project.projectDetails, "duration")}
+              </p>
+              <p>
+                <strong>Dependencies:</strong>{" "}
+                {renderArrayData(project.projectDetails, "dependencies")}
+              </p>
+              <p>
+                <strong>Company Name:</strong>{" "}
+                {renderArrayData(project.projectDetails, "companyName")}
+              </p>
+              <p>
+                <strong>Task:</strong>{" "}
+                {renderArrayData(project.projectDetails, "task")}
+              </p>
+              <p>
+                <strong>Quoted Value:</strong>{" "}
+                {renderArrayData(project.financialDetails, "quotedValue")}
+              </p>
+              <p>
+                <strong>Approved Value:</strong>{" "}
+                {renderArrayData(project.financialDetails, "approvedValue")}
+              </p>
+              <p>
+                <strong>Payment Terms:</strong>{" "}
+                {renderArrayData(project.financialDetails, "paymentTerms")}
+              </p>
+              <p>
+                <strong>Assigned To:</strong>{" "}
+                {renderArrayData(project.additionalDetails, "assignedTo")}
+              </p>
+              <p>
+                <strong>Status:</strong>{" "}
+                {renderArrayData(project.additionalDetails, "status")}
+              </p>
+              <p>
+                <strong>Created Date:</strong>{" "}
+                {renderArrayData(project.additionalDetails, "createdDate")}
+              </p>
             </div>
           </div>
         </div>
@@ -60,7 +124,9 @@ const ProjectDetailsModal = ({ project, onClose, onEdit }) => {
             onClick={() => onEdit(project)}
             disabled={role !== "Superadmin"}
             className={`px-6 py-2 rounded-lg text-white font-semibold transition ${
-              role === "Superadmin" ? "bg-blue-500 hover:bg-blue-600" : "bg-blue-400 cursor-not-allowed opacity-50"
+              role === "Superadmin"
+                ? "bg-blue-500 hover:bg-blue-600"
+                : "bg-blue-400 cursor-not-allowed opacity-50"
             }`}
           >
             Edit
@@ -77,9 +143,6 @@ const ProjectDetailsModal = ({ project, onClose, onEdit }) => {
   );
 };
 
-
-
-
 const ProjectManager = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -89,18 +152,21 @@ const ProjectManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
-  const ITEMS_PER_PAGE = 10; 
+  const ITEMS_PER_PAGE = 10;
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [role, setRole] = useState(localStorage.getItem("role") || "Superadmin");
+  const [role, setRole] = useState(
+    localStorage.getItem("role") || "Superadmin",
+  );
   const id = localStorage.getItem("empId");
   const navigate = useNavigate();
-
 
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch(`https://sensitivetechcrm.onrender.com/project/getallprojects/${id}`);
+        const response = await fetch(
+          `${import.meta.env.VITE_BASE_URL}/project/getallprojects/${id}`,
+        );
         const data = await response.json();
         if (response.status === 200) {
           setProjects(data);
@@ -119,33 +185,40 @@ const ProjectManager = () => {
 
   const getLatestValue = (array, field) => {
     if (!array || !Array.isArray(array) || array.length === 0) return "N/A";
-    const uniqueValues = [...new Set(array.map(item => item[field]).filter(Boolean))];
+    const uniqueValues = [
+      ...new Set(array.map((item) => item[field]).filter(Boolean)),
+    ];
     return uniqueValues.join(", ") || "N/A";
   };
 
   const processedProjects = useMemo(() => {
-    return projects?.map(project => ({
-      ...project,
-      displayData: {
-        projectName: getLatestValue(project.projectDetails, 'projectName'),
-        techStack: getLatestValue(project.projectDetails, 'techStack'),
-        companyName: getLatestValue(project.projectDetails, 'companyName'),
-        assignedTo: getLatestValue(project.additionalDetails, 'assignedTo'),
-        duration: getLatestValue(project.projectDetails, 'duration'),
-        task: getLatestValue(project.projectDetails, 'task'),
-        status: getLatestValue(project.additionalDetails, 'status'),
-        createdDate: project.additionalDetails?.[0]?.createdDate
-          ? new Date(project.additionalDetails[0].createdDate).toLocaleString()
-          : "N/A"
-      }
-    }))
-      .filter(project =>
-        role === "Superadmin" || project.displayData.status.toLowerCase() === "pending"
+    return projects
+      ?.map((project) => ({
+        ...project,
+        displayData: {
+          projectName: getLatestValue(project.projectDetails, "projectName"),
+          techStack: getLatestValue(project.projectDetails, "techStack"),
+          companyName: getLatestValue(project.projectDetails, "companyName"),
+          assignedTo: getLatestValue(project.additionalDetails, "assignedTo"),
+          duration: getLatestValue(project.projectDetails, "duration"),
+          task: getLatestValue(project.projectDetails, "task"),
+          status: getLatestValue(project.additionalDetails, "status"),
+          createdDate: project.additionalDetails?.[0]?.createdDate
+            ? new Date(
+                project.additionalDetails[0].createdDate,
+              ).toLocaleString()
+            : "N/A",
+        },
+      }))
+      .filter(
+        (project) =>
+          role === "Superadmin" ||
+          project.displayData.status.toLowerCase() === "pending",
       );
   }, [projects, role]);
 
   const handleAddProject = () => {
-    navigate('/add-project');
+    navigate("/add-project");
   };
 
   const handleDelete = async (projectId) => {
@@ -160,7 +233,7 @@ const ProjectManager = () => {
 
         if (response?.status === 200) {
           setProjects((prevProjects) =>
-            prevProjects.filter((project) => project._id !== projectId)
+            prevProjects.filter((project) => project._id !== projectId),
           );
           alert("Project deleted successfully!");
         } else {
@@ -170,7 +243,7 @@ const ProjectManager = () => {
         console.error("Error deleting project:", error);
         alert(
           error.response?.data?.message ||
-          "An error occurred while deleting the project."
+            "An error occurred while deleting the project.",
         );
       }
     }
@@ -216,7 +289,7 @@ const ProjectManager = () => {
 
   const applyDateFilter = () => {
     if (!startDate || !endDate) {
-      alert('Please select both start and end dates.');
+      alert("Please select both start and end dates.");
       return;
     }
 
@@ -246,9 +319,9 @@ const ProjectManager = () => {
   };
 
   const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
     }
     setSortConfig({ key, direction });
   };
@@ -260,9 +333,13 @@ const ProjectManager = () => {
       filtered = filtered.filter((project) => {
         const searchString = searchTerm.toLowerCase();
         return (
-          project.displayData.projectName.toLowerCase().includes(searchString) ||
+          project.displayData.projectName
+            .toLowerCase()
+            .includes(searchString) ||
           project.displayData.techStack.toLowerCase().includes(searchString) ||
-          project.displayData.companyName.toLowerCase().includes(searchString) ||
+          project.displayData.companyName
+            .toLowerCase()
+            .includes(searchString) ||
           project.displayData.assignedTo.toLowerCase().includes(searchString)
         );
       });
@@ -270,16 +347,16 @@ const ProjectManager = () => {
 
     if (sortConfig.key) {
       filtered.sort((a, b) => {
-        const aValue = a.displayData[sortConfig.key] || '';
-        const bValue = b.displayData[sortConfig.key] || '';
+        const aValue = a.displayData[sortConfig.key] || "";
+        const bValue = b.displayData[sortConfig.key] || "";
 
-        if (sortConfig.key === 'createdDate') {
-          return sortConfig.direction === 'asc'
+        if (sortConfig.key === "createdDate") {
+          return sortConfig.direction === "asc"
             ? new Date(aValue) - new Date(bValue)
             : new Date(bValue) - new Date(aValue);
         }
 
-        return sortConfig.direction === 'asc'
+        return sortConfig.direction === "asc"
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       });
@@ -290,10 +367,15 @@ const ProjectManager = () => {
 
   const paginatedProjects = useMemo(() => {
     const startIndex = currentPage * ITEMS_PER_PAGE;
-    return filteredAndSortedProjects.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    return filteredAndSortedProjects.slice(
+      startIndex,
+      startIndex + ITEMS_PER_PAGE,
+    );
   }, [filteredAndSortedProjects, currentPage]);
 
-  const totalPages = Math.ceil(filteredAndSortedProjects.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(
+    filteredAndSortedProjects.length / ITEMS_PER_PAGE,
+  );
 
   return (
     <div className="mx-auto p-4 mt-6">
@@ -317,7 +399,9 @@ const ProjectManager = () => {
             {role === "Superadmin" && (
               <>
                 <div>
-                  <label htmlFor="startDate" className="block">Start Date</label>
+                  <label htmlFor="startDate" className="block">
+                    Start Date
+                  </label>
                   <input
                     type="date"
                     id="startDate"
@@ -327,7 +411,9 @@ const ProjectManager = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor="endDate" className="block">End Date</label>
+                  <label htmlFor="endDate" className="block">
+                    End Date
+                  </label>
                   <input
                     type="date"
                     id="endDate"
@@ -346,14 +432,14 @@ const ProjectManager = () => {
             )}
           </div>
           <div className="flex space-x-4">
-          {role === "Superadmin" && (
-            <button
-              onClick={handleAddProject}
-              className="bg-blue-500 text-white px-6 py-2 rounded flex items-center hover:bg-blue-600"
-            >
-              Add Project
-            </button>
-             )}
+            {role === "Superadmin" && (
+              <button
+                onClick={handleAddProject}
+                className="bg-blue-500 text-white px-6 py-2 rounded flex items-center hover:bg-blue-600"
+              >
+                Add Project
+              </button>
+            )}
             {role === "Superadmin" && (
               <button
                 onClick={handleExportData}
@@ -374,94 +460,192 @@ const ProjectManager = () => {
             <p className="text-center p-4 text-red-500">{error}</p>
           ) : (
             <>
-            <table className="w-full">
-  <thead className="bg-[#2563eb] text-white border-b">
-    <tr>
-      <th className="p-4 text-center cursor-pointer whitespace-nowrap">S.No</th>
-      <th className="p-4 text-center cursor-pointer whitespace-nowrap" onClick={() => handleSort('projectName')}>
-        Project Name
-        <span>{sortConfig.key === 'projectName' ? (sortConfig.direction === 'asc' ? ' 🔼' : ' 🔽') : ''}</span>
-      </th>
-      <th className="p-4 text-center cursor-pointer whitespace-nowrap" onClick={() => handleSort('techStack')}>
-        Tech Stack
-        <span>{sortConfig.key === 'techStack' ? (sortConfig.direction === 'asc' ? ' 🔼' : ' 🔽') : ''}</span>
-      </th>
-      <th className="p-4 text-center cursor-pointer whitespace-nowrap" onClick={() => handleSort('companyName')}>
-        Client Company
-        <span>{sortConfig.key === 'companyName' ? (sortConfig.direction === 'asc' ? ' 🔼' : ' 🔽') : ''}</span>
-      </th>
-      <th className="p-4 text-center cursor-pointer whitespace-nowrap" onClick={() => handleSort('assignedTo')}>
-        Assigned To
-        <span>{sortConfig.key === 'assignedTo' ? (sortConfig.direction === 'asc' ? ' 🔼' : ' 🔽') : ''}</span>
-      </th>
-      <th className="p-4 text-center cursor-pointer whitespace-nowrap" onClick={() => handleSort('duration')}>
-        Duration
-        <span>{sortConfig.key === 'duration' ? (sortConfig.direction === 'asc' ? ' 🔼' : ' 🔽') : ''}</span>
-      </th>
-      <th className="p-4 text-center cursor-pointer whitespace-nowrap">Tasks</th>
-      <th className="p-4 text-center cursor-pointer whitespace-nowrap" onClick={() => handleSort('status')}>
-        Status
-        <span>{sortConfig.key === 'status' ? (sortConfig.direction === 'asc' ? ' 🔼' : ' 🔽') : ''}</span>
-      </th>
-      <th className="p-4 text-center cursor-pointer whitespace-nowrap" onClick={() => handleSort('createdDate')}>
-        Created Date
-        <span>{sortConfig.key === 'createdDate' ? (sortConfig.direction === 'asc' ? ' 🔼' : ' 🔽') : ''}</span>
-      </th>
-      <th className="p-4 text-center cursor-pointer whitespace-nowrap">Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {paginatedProjects.map((project, index) => (
-      <tr key={project._id} className="border-b hover:bg-gray-50 transition-colors whitespace-nowrap">
-        <td className="p-4 text-center">{currentPage * ITEMS_PER_PAGE + index + 1}</td>
-        <td className="p-4 text-center">{project.displayData.projectName}</td>
-        <td className="p-4 text-center">{project.displayData.techStack}</td>
-        <td className="p-4 text-center">{project.displayData.companyName}</td>
-        <td className="p-4 text-center">{project.displayData.assignedTo}</td>
-        <td className="p-4 text-center">{project.displayData.duration}</td>
-        <td className="p-4 text-center">{project.displayData.task}</td>
-        <td className="p-4 text-center">{project.displayData.status}</td>
-        <td className="p-4 text-center">{project.displayData.createdDate}</td>
-        <td className="p-4 text-center">
-          <div className="flex justify-center space-x-2">
-            <button
-              className="text-blue-500 hover:bg-blue-100 p-2 rounded-full"
-              title="View Project"
-              onClick={() => handleView(project)}
-            >
-              <Eye size={20} />
-            </button>
-            <button
-              className="text-red-500 hover:bg-red-100 p-2 rounded-full"
-              title="Delete Project"
-              onClick={() => handleDelete(project._id)}
-            >
-              <Trash2 size={20} />
-            </button>
-          </div>
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-
+              <table className="w-full">
+                <thead className="bg-[#2563eb] text-white border-b">
+                  <tr>
+                    <th className="p-4 text-center cursor-pointer whitespace-nowrap">
+                      S.No
+                    </th>
+                    <th
+                      className="p-4 text-center cursor-pointer whitespace-nowrap"
+                      onClick={() => handleSort("projectName")}
+                    >
+                      Project Name
+                      <span>
+                        {sortConfig.key === "projectName"
+                          ? sortConfig.direction === "asc"
+                            ? " 🔼"
+                            : " 🔽"
+                          : ""}
+                      </span>
+                    </th>
+                    <th
+                      className="p-4 text-center cursor-pointer whitespace-nowrap"
+                      onClick={() => handleSort("techStack")}
+                    >
+                      Tech Stack
+                      <span>
+                        {sortConfig.key === "techStack"
+                          ? sortConfig.direction === "asc"
+                            ? " 🔼"
+                            : " 🔽"
+                          : ""}
+                      </span>
+                    </th>
+                    <th
+                      className="p-4 text-center cursor-pointer whitespace-nowrap"
+                      onClick={() => handleSort("companyName")}
+                    >
+                      Client Company
+                      <span>
+                        {sortConfig.key === "companyName"
+                          ? sortConfig.direction === "asc"
+                            ? " 🔼"
+                            : " 🔽"
+                          : ""}
+                      </span>
+                    </th>
+                    <th
+                      className="p-4 text-center cursor-pointer whitespace-nowrap"
+                      onClick={() => handleSort("assignedTo")}
+                    >
+                      Assigned To
+                      <span>
+                        {sortConfig.key === "assignedTo"
+                          ? sortConfig.direction === "asc"
+                            ? " 🔼"
+                            : " 🔽"
+                          : ""}
+                      </span>
+                    </th>
+                    <th
+                      className="p-4 text-center cursor-pointer whitespace-nowrap"
+                      onClick={() => handleSort("duration")}
+                    >
+                      Duration
+                      <span>
+                        {sortConfig.key === "duration"
+                          ? sortConfig.direction === "asc"
+                            ? " 🔼"
+                            : " 🔽"
+                          : ""}
+                      </span>
+                    </th>
+                    <th className="p-4 text-center cursor-pointer whitespace-nowrap">
+                      Tasks
+                    </th>
+                    <th
+                      className="p-4 text-center cursor-pointer whitespace-nowrap"
+                      onClick={() => handleSort("status")}
+                    >
+                      Status
+                      <span>
+                        {sortConfig.key === "status"
+                          ? sortConfig.direction === "asc"
+                            ? " 🔼"
+                            : " 🔽"
+                          : ""}
+                      </span>
+                    </th>
+                    <th
+                      className="p-4 text-center cursor-pointer whitespace-nowrap"
+                      onClick={() => handleSort("createdDate")}
+                    >
+                      Created Date
+                      <span>
+                        {sortConfig.key === "createdDate"
+                          ? sortConfig.direction === "asc"
+                            ? " 🔼"
+                            : " 🔽"
+                          : ""}
+                      </span>
+                    </th>
+                    <th className="p-4 text-center cursor-pointer whitespace-nowrap">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedProjects.map((project, index) => (
+                    <tr
+                      key={project._id}
+                      className="border-b hover:bg-gray-50 transition-colors whitespace-nowrap"
+                    >
+                      <td className="p-4 text-center">
+                        {currentPage * ITEMS_PER_PAGE + index + 1}
+                      </td>
+                      <td className="p-4 text-center">
+                        {project.displayData.projectName}
+                      </td>
+                      <td className="p-4 text-center">
+                        {project.displayData.techStack}
+                      </td>
+                      <td className="p-4 text-center">
+                        {project.displayData.companyName}
+                      </td>
+                      <td className="p-4 text-center">
+                        {project.displayData.assignedTo}
+                      </td>
+                      <td className="p-4 text-center">
+                        {project.displayData.duration}
+                      </td>
+                      <td className="p-4 text-center">
+                        {project.displayData.task}
+                      </td>
+                      <td className="p-4 text-center">
+                        {project.displayData.status}
+                      </td>
+                      <td className="p-4 text-center">
+                        {project.displayData.createdDate}
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex justify-center space-x-2">
+                          <button
+                            className="text-blue-500 hover:bg-blue-100 p-2 rounded-full"
+                            title="View Project"
+                            onClick={() => handleView(project)}
+                          >
+                            <Eye size={20} />
+                          </button>
+                          <button
+                            className="text-red-500 hover:bg-red-100 p-2 rounded-full"
+                            title="Delete Project"
+                            onClick={() => handleDelete(project._id)}
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
               <div className="flex justify-between items-center p-4">
                 <div>
                   <span>
-                    Page <strong>{currentPage + 1} of {totalPages}</strong>
+                    Page{" "}
+                    <strong>
+                      {currentPage + 1} of {totalPages}
+                    </strong>
                   </span>
                 </div>
                 <div className="space-x-2">
                   <button
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 0))
+                    }
                     disabled={currentPage === 0}
                     className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
                   >
                     Previous
                   </button>
                   <button
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) =>
+                        Math.min(prev + 1, totalPages - 1),
+                      )
+                    }
                     disabled={currentPage + 1 === totalPages}
                     className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
                   >
@@ -475,7 +659,11 @@ const ProjectManager = () => {
       </div>
 
       {isModalOpen && selectedProject && (
-        <ProjectDetailsModal project={selectedProject} onClose={handleCloseModal} onEdit={handleEdit} />
+        <ProjectDetailsModal
+          project={selectedProject}
+          onClose={handleCloseModal}
+          onEdit={handleEdit}
+        />
       )}
     </div>
   );

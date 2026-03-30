@@ -39,7 +39,7 @@ function ClientEdit() {
     const fetchClientDetails = async () => {
       try {
         const response = await axios.get(
-          `https://sensitivetechcrm.onrender.com/clients/get/${id}`
+          `${import.meta.env.VITE_BASE_URL}/clients/get/${id}`,
         );
         if (response.status === 200) {
           setClient(response.data);
@@ -72,8 +72,8 @@ function ClientEdit() {
     e.preventDefault();
     try {
       const response = await axios.put(
-        `https://sensitivetechcrm.onrender.com/clients/update/${id}`,
-        client
+        `${import.meta.env.VITE_BASE_URL}/clients/update/${id}`,
+        client,
       );
 
       if (response.status === 200) {

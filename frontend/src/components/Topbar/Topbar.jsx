@@ -2,14 +2,18 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Menu, X, User, Search, ChevronDown,
+  Menu,
+  X,
+  User,
+  Search,
+  ChevronDown,
   LayoutDashboard,
   Briefcase,
   Users,
   Clipboard,
   MessageCircleQuestion,
   CreditCard,
-  FileText
+  FileText,
 } from "lucide-react";
 import { FaPowerOff } from "react-icons/fa";
 import logo from "../../assets/logo light.png";
@@ -28,75 +32,97 @@ const Topbar = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-  {
-    label: "Clients",
-    icon: Briefcase,
-    subMenu: [
-      {
-        label: "Clients",
-        path: "/client-table",
-        roles: ["Superadmin"],
-      },
-      {
-        label: "Projects",
-        path: "/project",
-        roles: ["Superadmin", "employee"],
-      },
-      {
-        label: "Payments",
-        path: "/payments-table",
-        roles: ["Superadmin"],
-      },
-      {
-        label: "Requirements",
-        path: "/requirements-table",
-        roles: ["Superadmin"],
-      },
-    ],
-  },
-  {
-    label: "Employees",
-    icon: Users,
-    subMenu: [
-      { label: "Employee List", path: "/employee-table", roles: ["Superadmin"] },
-      { label: "Attendance", path: "/attendance-table", roles: ["Superadmin", "employee", "Lead"] },
-      { label: "Leaves", path: "/leave-table", roles: ["Superadmin", "employee", "Lead"] },
-      { label: "Adjustments", path: "/adjustment-table", roles: ["Superadmin"] },
-      { label: "Payroll", path: "/payroll-table", roles: ["Superadmin"] },
-      { label: "Search Leads", path: "/search-leads", roles: ["Superadmin"] },
-    ],
-  },
-  { label: "Tasks", path: "/task", icon: Clipboard },
-  {
-    label: "Enquiries",
-    path: "/lead-table",
-    icon: MessageCircleQuestion,
-    roles: ["Superadmin", "Lead"],
-  },
-  {
-    label: "Expenses",
-    path: "/expense-table",
-    icon: CreditCard,
-    roles: ["Superadmin"],
-  },
-  { label: "MoM", path: "/momdetails", icon: FileText },
-  { label: "Quotations", path: "/quotation-table", icon: FileText, roles: ["Superadmin"] },
-];
-
+    { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    {
+      label: "Clients",
+      icon: Briefcase,
+      subMenu: [
+        {
+          label: "Clients",
+          path: "/client-table",
+          roles: ["Superadmin"],
+        },
+        {
+          label: "Projects",
+          path: "/project",
+          roles: ["Superadmin", "employee"],
+        },
+        {
+          label: "Payments",
+          path: "/payments-table",
+          roles: ["Superadmin"],
+        },
+        {
+          label: "Requirements",
+          path: "/requirements-table",
+          roles: ["Superadmin"],
+        },
+      ],
+    },
+    {
+      label: "Employees",
+      icon: Users,
+      subMenu: [
+        {
+          label: "Employee List",
+          path: "/employee-table",
+          roles: ["Superadmin"],
+        },
+        {
+          label: "Attendance",
+          path: "/attendance-table",
+          roles: ["Superadmin", "employee", "Lead"],
+        },
+        {
+          label: "Leaves",
+          path: "/leave-table",
+          roles: ["Superadmin", "employee", "Lead"],
+        },
+        {
+          label: "Adjustments",
+          path: "/adjustment-table",
+          roles: ["Superadmin"],
+        },
+        { label: "Payroll", path: "/payroll-table", roles: ["Superadmin"] },
+        { label: "Search Leads", path: "/search-leads", roles: ["Superadmin"] },
+      ],
+    },
+    { label: "Tasks", path: "/task", icon: Clipboard },
+    {
+      label: "Enquiries",
+      path: "/lead-table",
+      icon: MessageCircleQuestion,
+      roles: ["Superadmin", "Lead"],
+    },
+    {
+      label: "Expenses",
+      path: "/expense-table",
+      icon: CreditCard,
+      roles: ["Superadmin"],
+    },
+    { label: "MoM", path: "/momdetails", icon: FileText },
+    {
+      label: "Quotations",
+      path: "/quotation-table",
+      icon: FileText,
+      roles: ["Superadmin"],
+    },
+  ];
 
   useEffect(() => {
     const storedRole = localStorage.getItem("role") || "Superadmin";
     setRole(storedRole);
     const handleClickOutside = (event) => {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target)
+      ) {
         setIsMobileMenuOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
   useEffect(() => {
     if (showSearch && searchInputRef.current) {
@@ -113,7 +139,9 @@ const Topbar = () => {
     setShowProfile(!showProfile);
     if (!userProfile) {
       try {
-        const response = await axios.get(`https://sensitivetechcrm.onrender.com/employeedetails/${localStorage.getItem("empId")}`);
+        const response = await axios.get(
+          `${import.meta.env.VITE_BASE_URL}/employeedetails/${localStorage.getItem("empId")}`,
+        );
         setUserProfile(response.data);
       } catch (error) {
         console.error("Error fetching profile data:", error);
@@ -121,14 +149,15 @@ const Topbar = () => {
     }
   };
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
-  const toggleSubMenu = (label) => setOpenSubMenu(openSubMenu === label ? null : label);
+  const toggleSubMenu = (label) =>
+    setOpenSubMenu(openSubMenu === label ? null : label);
   const toggleSearch = () => setShowSearch(!showSearch);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log('Searching for:', searchQuery);
+    console.log("Searching for:", searchQuery);
     setShowSearch(false);
-    setSearchQuery('');
+    setSearchQuery("");
   };
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -140,18 +169,24 @@ const Topbar = () => {
     const ItemIcon = item.icon;
 
     if (item.subMenu) {
-      const visibleSubItems = item.subMenu.filter(subItem => !subItem.roles || subItem.roles.includes(role));
+      const visibleSubItems = item.subMenu.filter(
+        (subItem) => !subItem.roles || subItem.roles.includes(role),
+      );
       if (visibleSubItems.length === 0) return null;
 
       return (
-        <div key={item.label} className={`relative ${isMobile ? 'w-full' : ''}`}>
+        <div
+          key={item.label}
+          className={`relative ${isMobile ? "w-full" : ""}`}
+        >
           <div
             onClick={() => toggleSubMenu(item.label)}
             className={`
               flex items-center justify-between cursor-pointer
-              ${isMobile
-                ? 'px-4 py-3 text-gray-100 hover:bg-blue-700 w-full'
-                : 'text-white hover:text-gray-400 px-3 py-2 rounded-md text-sm font-medium'
+              ${
+                isMobile
+                  ? "px-4 py-3 text-gray-100 hover:bg-blue-700 w-full"
+                  : "text-white hover:text-gray-400 px-3 py-2 rounded-md text-sm font-medium"
               }
             `}
           >
@@ -159,16 +194,21 @@ const Topbar = () => {
               {ItemIcon && <ItemIcon className="mr-2 h-5 w-5" />}
               {item.label}
             </div>
-            <ChevronDown className={`h-4 w-4 transform transition-transform ${openSubMenu === item.label ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              className={`h-4 w-4 transform transition-transform ${openSubMenu === item.label ? "rotate-180" : ""}`}
+            />
           </div>
 
           {openSubMenu === item.label && (
-            <div className={`
-              ${isMobile
-                ? 'bg-blue-700 w-full'
-                : 'absolute top-full left-0 mt-1 bg-white shadow-lg rounded-md min-w-[200px]'
+            <div
+              className={`
+              ${
+                isMobile
+                  ? "bg-blue-700 w-full"
+                  : "absolute top-full left-0 mt-1 bg-white shadow-lg rounded-md min-w-[200px]"
               }
-            `}>
+            `}
+            >
               {visibleSubItems.map((subItem) => (
                 <Link
                   key={subItem.path}
@@ -176,9 +216,10 @@ const Topbar = () => {
                   onClick={() => isMobile && setIsMobileMenuOpen(false)}
                   className={`
                     block px-4 py-2
-                    ${isMobile
-                      ? 'text-gray-100 hover:bg-blue-800'
-                      : 'text-gray-900 hover:bg-gray-300'
+                    ${
+                      isMobile
+                        ? "text-gray-100 hover:bg-blue-800"
+                        : "text-gray-900 hover:bg-gray-300"
                     }
                   `}
                 >
@@ -200,9 +241,10 @@ const Topbar = () => {
         onClick={() => isMobile && setIsMobileMenuOpen(false)}
         className={`
           flex items-center
-          ${isMobile
-            ? 'px-4 py-3 text-gray-100 hover:bg-blue-700 w-full'
-            : 'text-white hover:text-gray-400 px-3 py-2 rounded-md text-sm font-medium'
+          ${
+            isMobile
+              ? "px-4 py-3 text-gray-100 hover:bg-blue-700 w-full"
+              : "text-white hover:text-gray-400 px-3 py-2 rounded-md text-sm font-medium"
           }
         `}
       >
@@ -217,7 +259,10 @@ const Topbar = () => {
       <div className="fixed inset-0 bg-gray-800 text-white flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
           <h1 className="text-2xl font-bold mb-4">Access Restricted</h1>
-          <p className="text-lg">This application is not accessible on mobile for your role. Please use a desktop device.</p>
+          <p className="text-lg">
+            This application is not accessible on mobile for your role. Please
+            use a desktop device.
+          </p>
         </div>
       </div>
     );
@@ -244,7 +289,10 @@ const Topbar = () => {
                 <Search className="h-5 w-5" />
               </button> */}
 
-              <button onClick={handleLogout} className="bg-white text-red-500 px-4 py-2 rounded-md hover:text-gray-500">
+              <button
+                onClick={handleLogout}
+                className="bg-white text-red-500 px-4 py-2 rounded-md hover:text-gray-500"
+              >
                 <FaPowerOff className="h-5 w-5" />
               </button>
               <User
@@ -267,7 +315,10 @@ const Topbar = () => {
         {showSearch && (
           <div className="absolute inset-0 bg-blue-600 z-50">
             <div className="max-w-8xl mx-auto px-4 h-20 flex items-center">
-              <form onSubmit={handleSearch} className="flex-1 flex items-center">
+              <form
+                onSubmit={handleSearch}
+                className="flex-1 flex items-center"
+              >
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -318,75 +369,71 @@ const Topbar = () => {
         )}
       </nav>
       {showProfile && userProfile && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="bg-blue-600 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-white text-lg font-semibold">
+                Profile Details
+              </h2>
+              <button
+                onClick={toggleProfile}
+                className="text-white hover:text-gray-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-      {/* Header */}
-      <div className="bg-blue-600 px-6 py-4 flex justify-between items-center">
-        <h2 className="text-white text-lg font-semibold">
-          Profile Details
-        </h2>
-        <button onClick={toggleProfile} className="text-white hover:text-gray-200">
-          <X className="h-5 w-5" />
-        </button>
-      </div>
+            {/* Body */}
+            <div className="p-6">
+              {/* Avatar */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-bold">
+                  {userProfile.name?.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {userProfile.name}
+                  </h3>
+                  <p className="text-sm text-gray-500">{role}</p>
+                </div>
+              </div>
 
-      {/* Body */}
-      <div className="p-6">
-        {/* Avatar */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-bold">
-            {userProfile.name?.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800">
-              {userProfile.name}
-            </h3>
-            <p className="text-sm text-gray-500">
-              {role}
-            </p>
+              {/* Info */}
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between border-b pb-2">
+                  <span className="text-gray-500">Employee ID</span>
+                  <span className="font-medium text-gray-800">
+                    {userProfile.empId}
+                  </span>
+                </div>
+
+                <div className="flex justify-between border-b pb-2">
+                  <span className="text-gray-500">Email</span>
+                  <span className="font-medium text-gray-800 break-all">
+                    {userProfile.email}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Role</span>
+                  <span className="font-medium text-gray-800">{role}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 px-6 py-4 flex justify-end">
+              <button
+                onClick={toggleProfile}
+                className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
-
-        {/* Info */}
-        <div className="space-y-3 text-sm">
-          <div className="flex justify-between border-b pb-2">
-            <span className="text-gray-500">Employee ID</span>
-            <span className="font-medium text-gray-800">
-              {userProfile.empId}
-            </span>
-          </div>
-
-          <div className="flex justify-between border-b pb-2">
-            <span className="text-gray-500">Email</span>
-            <span className="font-medium text-gray-800 break-all">
-              {userProfile.email}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-gray-500">Role</span>
-            <span className="font-medium text-gray-800">
-              {role}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="bg-gray-50 px-6 py-4 flex justify-end">
-        <button
-          onClick={toggleProfile}
-          className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-        >
-          Close
-        </button>
-      </div>
-
-    </div>
-  </div>
-)}
-
+      )}
     </>
   );
 };

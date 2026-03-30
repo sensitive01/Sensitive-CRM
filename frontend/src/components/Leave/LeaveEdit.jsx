@@ -22,7 +22,9 @@ function LeaveEdit() {
   });
   const [currentDate, setCurrentDate] = useState("");
   const taskid = localStorage.getItem("empId");
-  const [role, setRole] = useState(localStorage.getItem("role") || "Superadmin");
+  const [role, setRole] = useState(
+    localStorage.getItem("role") || "Superadmin",
+  );
 
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -30,14 +32,19 @@ function LeaveEdit() {
 
   const { id } = useParams();
   const navigate = useNavigate();
-  const leaveTypes = ["Sick Leave", "Casual Leave", "Emergency Leave", "Others"];
+  const leaveTypes = [
+    "Sick Leave",
+    "Casual Leave",
+    "Emergency Leave",
+    "Others",
+  ];
 
   const formatDateForInput = (date) => {
-    if (!date) return '';
+    if (!date) return "";
     const d = new Date(date);
     const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
 
@@ -63,9 +70,6 @@ function LeaveEdit() {
     fetchEmployees();
     setCurrentDate(new Date().toISOString().split("T")[0]);
   }, [role, taskid]);
-
-
-
 
   useEffect(() => {
     if (!id) return;
@@ -104,11 +108,11 @@ function LeaveEdit() {
   const handleStatusChange = async (leaveId, newStatus) => {
     try {
       const response = await axios.put(
-        `https://sensitivetechcrm.onrender.com/leaves/update-status/${leaveId}`,
+        `${import.meta.env.VITE_BASE_URL}/leaves/update-status/${leaveId}`,
         {
           status: newStatus,
           statusChangeDate: new Date().toISOString(),
-        }
+        },
       );
 
       if (response.status === 200) {
@@ -125,7 +129,6 @@ function LeaveEdit() {
     }
   };
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -134,13 +137,20 @@ function LeaveEdit() {
       leave.leaveType === "Others" ? leave.customLeaveType : leave.leaveType;
 
     const finalPermissionType =
-      leave.leaveType === "Others" ? leave.customPermissionType : leave.leaveType;
+      leave.leaveType === "Others"
+        ? leave.customPermissionType
+        : leave.leaveType;
     Object.keys(leave).forEach((key) => {
       if (key !== "attachment") {
         if (key === "leaveType") {
-          formData.append("leaveType", leave.leaveCategory === "Leave" ? finalLeaveType : finalPermissionType);
+          formData.append(
+            "leaveType",
+            leave.leaveCategory === "Leave"
+              ? finalLeaveType
+              : finalPermissionType,
+          );
         } else if (leave[key]) {
-          formData.append(key, leave[key]); 
+          formData.append(key, leave[key]);
         }
       }
     });
@@ -151,12 +161,20 @@ function LeaveEdit() {
 
     try {
       const response = id
-        ? await axios.put(`https://sensitivetechcrm.onrender.com/leaves/update/${id}`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        })
-        : await axios.post("https://sensitivetechcrm.onrender.com/leaves/create", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        ? await axios.put(
+            `${import.meta.env.VITE_BASE_URL}/leaves/update/${id}`,
+            formData,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+            },
+          )
+        : await axios.post(
+            `${import.meta.env.VITE_BASE_URL}/leaves/create`,
+            formData,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+            },
+          );
 
       if (response.status === 200 || response.status === 201) {
         alert("Leave data submitted successfully!");
@@ -165,7 +183,7 @@ function LeaveEdit() {
           leaveCategory: "",
           leaveType: "",
           customLeaveType: "",
-          customPermissonType: "", 
+          customPermissonType: "",
           permissionDate: "",
           startDate: "",
           endDate: "",
@@ -186,8 +204,6 @@ function LeaveEdit() {
     }
   };
 
-
-
   if (loading) {
     return (
       <div className="min-h-screen flex justify-center items-center">
@@ -206,17 +222,18 @@ function LeaveEdit() {
 
   return (
     <div className="container mx-auto p-6 mt-16 bg-indigo-50">
-<h2 className="text-3xl font-bold mb-8 px-6 py-3 bg-indigo-100 rounded-lg text-indigo-800 text-center mx-auto w-max">
-Edit Leave Application Form
-</h2>
+      <h2 className="text-3xl font-bold mb-8 px-6 py-3 bg-indigo-100 rounded-lg text-indigo-800 text-center mx-auto w-max">
+        Edit Leave Application Form
+      </h2>
 
-     
       <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
         <div className="border border-blue-500 p-6 rounded-lg">
           <div className="space-y-8 pb-4">
             {role === "Superadmin" ? (
               <div>
-                <label className="block text-sm font-medium pb-4">Select Employee:</label>
+                <label className="block text-sm font-medium pb-4">
+                  Select Employee:
+                </label>
                 <select
                   name="employee"
                   value={leave.employee}
@@ -234,7 +251,9 @@ Edit Leave Application Form
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium pb-4">Employee Name:</label>
+                <label className="block text-sm font-medium pb-4">
+                  Employee Name:
+                </label>
                 <input
                   type="text"
                   value={leave.employee}
@@ -244,7 +263,9 @@ Edit Leave Application Form
               </div>
             )}
             <div className="pb-4">
-              <label className="block text-sm font-medium pb-4">Leave or Permission:</label>
+              <label className="block text-sm font-medium pb-4">
+                Leave or Permission:
+              </label>
               <div className="flex space-x-4">
                 <div>
                   <input
@@ -274,7 +295,9 @@ Edit Leave Application Form
             </div>
             {leave.leaveCategory === "Leave" && (
               <div>
-                <label className="block text-sm font-medium pb-4">Leave Type:</label>
+                <label className="block text-sm font-medium pb-4">
+                  Leave Type:
+                </label>
                 <select
                   name="leaveType"
                   value={leave.leaveType}
@@ -291,21 +314,26 @@ Edit Leave Application Form
                 </select>
               </div>
             )}
-            {leave.leaveType === "Others" && leave.leaveCategory === "Leave" && (
-              <div>
-                <label className="block text-sm font-medium pb-4">Specify Leave Type:</label>
-                <textarea
-                  name="customLeaveType"
-                  value={leave.customLeaveType}
-                  onChange={handleChange}
-                  className="border border-blue-300 p-2 w-full rounded"
-                  placeholder="Enter custom leave type"
-                />
-              </div>
-            )}
+            {leave.leaveType === "Others" &&
+              leave.leaveCategory === "Leave" && (
+                <div>
+                  <label className="block text-sm font-medium pb-4">
+                    Specify Leave Type:
+                  </label>
+                  <textarea
+                    name="customLeaveType"
+                    value={leave.customLeaveType}
+                    onChange={handleChange}
+                    className="border border-blue-300 p-2 w-full rounded"
+                    placeholder="Enter custom leave type"
+                  />
+                </div>
+              )}
             {leave.leaveCategory === "Leave" && (
               <div>
-                <label className="block text-sm font-medium pb-4">Leave Dates:</label>
+                <label className="block text-sm font-medium pb-4">
+                  Leave Dates:
+                </label>
                 <div className="flex space-x-4">
                   <input
                     type="date"
@@ -331,7 +359,9 @@ Edit Leave Application Form
             )}
             {leave.leaveCategory === "Permission" && (
               <div>
-                <label className="block text-sm font-medium pb-4">Permission Type:</label>
+                <label className="block text-sm font-medium pb-4">
+                  Permission Type:
+                </label>
                 <select
                   name="leaveType"
                   value={leave.leaveType}
@@ -341,7 +371,10 @@ Edit Leave Application Form
                 >
                   <option value="">Select Permission Type</option>
                   {leaveTypes
-                    .filter(type => type.includes("Permission") || type === "Others")
+                    .filter(
+                      (type) =>
+                        type.includes("Permission") || type === "Others",
+                    )
                     .map((type, index) => (
                       <option key={index} value={type}>
                         {type}
@@ -350,21 +383,26 @@ Edit Leave Application Form
                 </select>
               </div>
             )}
-            {leave.leaveType === "Others" && leave.leaveCategory === "Permission" && (
-              <div>
-                <label className="block text-sm font-medium pb-4">Specify Permission Type:</label>
-                <textarea
-                  name="customPermissionType"
-                  value={leave.customPermissonType}
-                  onChange={handleChange}
-                  className="border border-blue-300 p-2 w-full rounded"
-                  placeholder="Enter custom permission type"
-                />
-              </div>
-            )}
+            {leave.leaveType === "Others" &&
+              leave.leaveCategory === "Permission" && (
+                <div>
+                  <label className="block text-sm font-medium pb-4">
+                    Specify Permission Type:
+                  </label>
+                  <textarea
+                    name="customPermissionType"
+                    value={leave.customPermissonType}
+                    onChange={handleChange}
+                    className="border border-blue-300 p-2 w-full rounded"
+                    placeholder="Enter custom permission type"
+                  />
+                </div>
+              )}
             {leave.leaveCategory === "Permission" && (
               <div>
-                <label className="block text-sm font-medium pb-4">Permission Date:</label>
+                <label className="block text-sm font-medium pb-4">
+                  Permission Date:
+                </label>
                 <input
                   type="date"
                   name="permissionDate"
@@ -378,7 +416,9 @@ Edit Leave Application Form
             )}
             {leave.leaveCategory === "Permission" && (
               <div>
-                <label className="block text-sm font-medium pb-4">Time Range:</label>
+                <label className="block text-sm font-medium pb-4">
+                  Time Range:
+                </label>
                 <div className="flex space-x-4">
                   <input
                     type="time"
@@ -416,7 +456,9 @@ Edit Leave Application Form
               />
             </div>
             <div>
-              <label className="block text-sm font-medium pb-4">Attachment:</label>
+              <label className="block text-sm font-medium pb-4">
+                Attachment:
+              </label>
               {leave.attachment && (
                 <div>
                   <img
@@ -451,24 +493,23 @@ Edit Leave Application Form
           </div>
         </div>
         <div className="col-span-2 flex justify-center gap-6 mt-8">
-  <button
-    type="submit"
-    className="px-8 py-2.5 rounded-lg bg-blue-600 text-white font-semibold
+          <button
+            type="submit"
+            className="px-8 py-2.5 rounded-lg bg-blue-600 text-white font-semibold
                hover:bg-blue-700 transition duration-200 shadow-md"
-  >
-    Submit
-  </button>
+          >
+            Submit
+          </button>
 
-  <button
-    type="button"
-    onClick={() => navigate(-1)}
-    className="px-8 py-2.5 rounded-lg bg-gray-500 text-white font-semibold
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="px-8 py-2.5 rounded-lg bg-gray-500 text-white font-semibold
                hover:bg-gray-600 transition duration-200 shadow-md"
-  >
-    Cancel
-  </button>
-</div>
-
+          >
+            Cancel
+          </button>
+        </div>
       </form>
     </div>
   );

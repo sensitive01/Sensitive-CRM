@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
 
 const AdminForm = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    officeEmail: '',
-    password: '',
-    adminType: '', 
+    name: "",
+    officeEmail: "",
+    password: "",
+    adminType: "",
   });
 
-  const [loading, setLoading] = useState(false); 
-  const [message, setMessage] = useState(''); 
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,27 +21,35 @@ const AdminForm = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); 
-    if (!formData.name || !formData.officeEmail || !formData.password || !formData.adminType) {
-      setMessage('Please fill all the fields');
+    e.preventDefault();
+    if (
+      !formData.name ||
+      !formData.officeEmail ||
+      !formData.password ||
+      !formData.adminType
+    ) {
+      setMessage("Please fill all the fields");
       return;
     }
     setLoading(true);
-    setMessage('');
+    setMessage("");
 
     try {
-      const response = await axios.post('https://sensitivetechcrm.onrender.com/super-admin/createsuperadmin', formData);
-      console.log('Response:', response.data);
-      setMessage('Admin form submitted successfully!');
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/super-admin/createsuperadmin`,
+        formData,
+      );
+      console.log("Response:", response.data);
+      setMessage("Admin form submitted successfully!");
       setFormData({
-        name: '',
-        officeEmail: '',
-        password: '',
-        adminType: '',
-      }); 
+        name: "",
+        officeEmail: "",
+        password: "",
+        adminType: "",
+      });
     } catch (error) {
-      console.error('Error:', error);
-      setMessage('Failed to submit the form. Please try again.');
+      console.error("Error:", error);
+      setMessage("Failed to submit the form. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -110,7 +118,7 @@ const AdminForm = () => {
                 className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-md"
                 disabled={loading}
               >
-                {loading ? 'Submitting...' : 'Submit'}
+                {loading ? "Submitting..." : "Submit"}
               </button>
             </div>
           </div>
@@ -119,7 +127,7 @@ const AdminForm = () => {
         {message && (
           <div
             className={`mt-4 p-4 rounded-md ${
-              message.includes('successfully') ? 'bg-green-200' : 'bg-red-200'
+              message.includes("successfully") ? "bg-green-200" : "bg-red-200"
             }`}
           >
             {message}

@@ -5,14 +5,21 @@ import { FaPlus, FaFileDownload, FaFilter } from "react-icons/fa";
 import axios from "axios";
 import * as XLSX from "xlsx";
 
-import { useTable, useGlobalFilter, useSortBy, usePagination } from "react-table";
+import {
+  useTable,
+  useGlobalFilter,
+  useSortBy,
+  usePagination,
+} from "react-table";
 
 // Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="relative bg-white rounded-lg max-w-2xl w-full m-4">{children}</div>
+      <div className="relative bg-white rounded-lg max-w-2xl w-full m-4">
+        {children}
+      </div>
     </div>
   );
 };
@@ -26,10 +33,13 @@ const EmployeeDetailsModal = ({ isOpen, onClose, employee }) => {
       <div className="p-4">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Employee Details</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
             <X size={24} />
           </button>
-        </div> 
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="col-span-2 flex justify-center">
             <img
@@ -40,13 +50,25 @@ const EmployeeDetailsModal = ({ isOpen, onClose, employee }) => {
           </div>
           <div className="space-y-4 col-span-2">
             <div className="grid grid-cols-2 gap-4">
-              <DetailItem label="Employee ID" value={employee.empId || employee._id} />
+              <DetailItem
+                label="Employee ID"
+                value={employee.empId || employee._id}
+              />
               <DetailItem label="Name" value={employee.name} />
               <DetailItem label="Designation" value={employee.designation} />
               <DetailItem label="Department" value={employee.department} />
-              <DetailItem label="Date of Birth" value={formatDate(employee.dob)} />
-              <DetailItem label="Date of Joining" value={formatDate(employee.doj)} />
-              <DetailItem label="Created Date" value={formatDateTime(employee.createdAt)} />
+              <DetailItem
+                label="Date of Birth"
+                value={formatDate(employee.dob)}
+              />
+              <DetailItem
+                label="Date of Joining"
+                value={formatDate(employee.doj)}
+              />
+              <DetailItem
+                label="Created Date"
+                value={formatDateTime(employee.createdAt)}
+              />
               <DetailItem label="Shift Time" value={combinedShiftTime} />
             </div>
           </div>
@@ -75,9 +97,17 @@ const formatDateTime = (dateString) => {
   if (!dateString || isNaN(new Date(dateString).getTime())) return "N/A";
   const date = new Date(dateString);
   return (
-    date.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "2-digit" }) +
+    date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    }) +
     ", " +
-    date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })
+    date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
   );
 };
 
@@ -97,7 +127,9 @@ const EmployeeTable = () => {
     const fetchEmployees = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("https://sensitivetechcrm.onrender.com/getallemployees");
+        const response = await axios.get(
+          `${import.meta.env.VITE_BASE_URL}/getallemployees`,
+        );
         setEmployees(response.data);
       } catch (err) {
         setError(err.message);
@@ -118,13 +150,18 @@ const EmployeeTable = () => {
 
     const newStatus = row.status === "Active" ? "Inactive" : "Active";
 
-    axios.put(`https://sensitivetechcrm.onrender.com/updatestatus/${empId}`, { status: newStatus })
+    axios
+      .put(`${import.meta.env.VITE_BASE_URL}/updatestatus/${empId}`, {
+        status: newStatus,
+      })
       .then((res) => {
         console.log("Status updated:", res.data);
         setEmployees((prev) =>
           prev.map((emp) =>
-            (emp._id || emp.empId) === empId ? { ...emp, status: newStatus } : emp
-          )
+            (emp._id || emp.empId) === empId
+              ? { ...emp, status: newStatus }
+              : emp,
+          ),
         );
       })
       .catch((err) => {
@@ -136,8 +173,12 @@ const EmployeeTable = () => {
   const handleEmployeeDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this employee?")) {
       try {
-        await axios.delete(`https://sensitivetechcrm.onrender.com/deleteemployee/${id}`);
-        setEmployees((prev) => prev.filter((emp) => (emp._id || emp.empId) !== id));
+        await axios.delete(
+          `${import.meta.env.VITE_BASE_URL}/deleteemployee/${id}`,
+        );
+        setEmployees((prev) =>
+          prev.filter((emp) => (emp._id || emp.empId) !== id),
+        );
         alert("Employee deleted successfully!");
       } catch (err) {
         alert("Failed to delete employee.");
@@ -162,7 +203,10 @@ const EmployeeTable = () => {
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Employee Records");
-    XLSX.writeFile(workbook, `Employee_Records_${new Date().toISOString().split("T")[0]}.xlsx`);
+    XLSX.writeFile(
+      workbook,
+      `Employee_Records_${new Date().toISOString().split("T")[0]}.xlsx`,
+    );
   };
 
   // Columns
@@ -187,8 +231,16 @@ const EmployeeTable = () => {
       { Header: "Role", accessor: "role" },
       { Header: "Designation", accessor: "designation" },
       { Header: "Department", accessor: "department" },
-      { Header: "DOB", accessor: "dob", Cell: ({ value }) => formatDate(value) },
-      { Header: "DOJ", accessor: "doj", Cell: ({ value }) => formatDate(value) },
+      {
+        Header: "DOB",
+        accessor: "dob",
+        Cell: ({ value }) => formatDate(value),
+      },
+      {
+        Header: "DOJ",
+        accessor: "doj",
+        Cell: ({ value }) => formatDate(value),
+      },
       {
         Header: "Status",
         accessor: "status",
@@ -201,8 +253,8 @@ const EmployeeTable = () => {
                 status === "Active"
                   ? "bg-green-100 text-green-800"
                   : status === "On Leave"
-                  ? "bg-yellow-100 text-yellow-800"
-                  : "bg-red-100 text-red-800"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-red-100 text-red-800"
               }`}
               title="Click to toggle status"
             >
@@ -211,59 +263,67 @@ const EmployeeTable = () => {
           );
         },
       },
-      { Header: "Created Date", accessor: "createdAt", Cell: ({ value }) => formatDateTime(value) },
       {
-  Header: "Actions",
-  accessor: "_id",
-  Cell: ({ row }) => {
-    const emp = row.original;
-    return (
-      <div className="flex justify-center space-x-2">
-        {/* View Details */}
-        <button
-          onClick={() => { setSelectedEmployee(emp); setIsModalOpen(true); }}
-          className="text-blue-500 hover:bg-blue-100 p-2 rounded-full transition-colors"
-          title="View Details"
-        >
-          <Eye size={20} />
-        </button>
+        Header: "Created Date",
+        accessor: "createdAt",
+        Cell: ({ value }) => formatDateTime(value),
+      },
+      {
+        Header: "Actions",
+        accessor: "_id",
+        Cell: ({ row }) => {
+          const emp = row.original;
+          return (
+            <div className="flex justify-center space-x-2">
+              {/* View Details */}
+              <button
+                onClick={() => {
+                  setSelectedEmployee(emp);
+                  setIsModalOpen(true);
+                }}
+                className="text-blue-500 hover:bg-blue-100 p-2 rounded-full transition-colors"
+                title="View Details"
+              >
+                <Eye size={20} />
+              </button>
 
-        {/* Edit Employee */}
-        <button
-          onClick={() => navigate(`/employee-edit/${emp._id}`)}
-          className="text-green-500 hover:bg-green-100 p-2 rounded-full transition-colors"
-          title="Edit Employee"
-        >
-          <Edit size={20} />
-        </button>
+              {/* Edit Employee */}
+              <button
+                onClick={() => navigate(`/employee-edit/${emp._id}`)}
+                className="text-green-500 hover:bg-green-100 p-2 rounded-full transition-colors"
+                title="Edit Employee"
+              >
+                <Edit size={20} />
+              </button>
 
-        {/* Toggle Status Icon */}
-        <button
-          onClick={() => handleToggleStatus(emp)}
-          className={`p-2 rounded-full transition-colors ${
-            emp.status === "Active" ? "bg-red-500 text-white" : "bg-green-500 text-white"
-          }`}
-          title={emp.status === "Active" ? "Set Inactive" : "Set Active"}
-        >
-          {/* Use Eye icon as placeholder; can replace with a different icon */}
-          <Eye size={18} />
-        </button>
+              {/* Toggle Status Icon */}
+              <button
+                onClick={() => handleToggleStatus(emp)}
+                className={`p-2 rounded-full transition-colors ${
+                  emp.status === "Active"
+                    ? "bg-red-500 text-white"
+                    : "bg-green-500 text-white"
+                }`}
+                title={emp.status === "Active" ? "Set Inactive" : "Set Active"}
+              >
+                {/* Use Eye icon as placeholder; can replace with a different icon */}
+                <Eye size={18} />
+              </button>
 
-        {/* Delete Employee */}
-        <button
-          onClick={() => handleEmployeeDelete(emp._id)}
-          className="text-red-500 hover:bg-red-100 p-2 rounded-full transition-colors"
-          title="Delete Employee"
-        >
-          <Trash2 size={20} />
-        </button>
-      </div>
-    );
-  },
-}
-
+              {/* Delete Employee */}
+              <button
+                onClick={() => handleEmployeeDelete(emp._id)}
+                className="text-red-500 hover:bg-red-100 p-2 rounded-full transition-colors"
+                title="Delete Employee"
+              >
+                <Trash2 size={20} />
+              </button>
+            </div>
+          );
+        },
+      },
     ],
-    [employees]
+    [employees],
   );
 
   // Table setup
@@ -280,16 +340,25 @@ const EmployeeTable = () => {
     canNextPage,
     canPreviousPage,
     pageOptions,
-  } = useTable({ columns, data: employees, initialState: { pageSize: 10 } }, useGlobalFilter, useSortBy, usePagination);
+  } = useTable(
+    { columns, data: employees, initialState: { pageSize: 10 } },
+    useGlobalFilter,
+    useSortBy,
+    usePagination,
+  );
 
   const { globalFilter, pageIndex } = state;
 
-  if (loading) return <div className="text-center mt-20">Loading employee data...</div>;
-  if (error) return <div className="text-center mt-20 text-red-500">Error: {error}</div>;
+  if (loading)
+    return <div className="text-center mt-20">Loading employee data...</div>;
+  if (error)
+    return <div className="text-center mt-20 text-red-500">Error: {error}</div>;
 
   return (
     <div className="mx-auto p-4">
-      <h2 className="text-4xl font-bold mb-10 text-center mt-20">Employee Details</h2>
+      <h2 className="text-4xl font-bold mb-10 text-center mt-20">
+        Employee Details
+      </h2>
 
       {/* Filters */}
       <div className="flex justify-between items-center mb-4">
@@ -306,7 +375,9 @@ const EmployeeTable = () => {
 
         <div className="flex space-x-4 items-center -mt-6">
           <div>
-            <label htmlFor="startDate" className="block">Start Date</label>
+            <label htmlFor="startDate" className="block">
+              Start Date
+            </label>
             <input
               type="date"
               id="startDate"
@@ -316,7 +387,9 @@ const EmployeeTable = () => {
             />
           </div>
           <div>
-            <label htmlFor="endDate" className="block">End Date</label>
+            <label htmlFor="endDate" className="block">
+              End Date
+            </label>
             <input
               type="date"
               id="endDate"
@@ -325,14 +398,27 @@ const EmployeeTable = () => {
               className="border border-blue-500 p-2 rounded w-32"
             />
           </div>
-          <button onClick={() => { /* your applyDateFilter logic */ }} className="bg-blue-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6">Apply Filter</button>
+          <button
+            onClick={() => {
+              /* your applyDateFilter logic */
+            }}
+            className="bg-blue-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6"
+          >
+            Apply Filter
+          </button>
         </div>
 
         <div className="flex space-x-4">
-          <button onClick={exportToExcel} className="bg-green-500 text-white px-6 py-2 rounded flex items-center hover:bg-green-600">
+          <button
+            onClick={exportToExcel}
+            className="bg-green-500 text-white px-6 py-2 rounded flex items-center hover:bg-green-600"
+          >
             <FaFileDownload className="mr-2" /> Export Data
           </button>
-          <Link to="/employee-form" className="bg-blue-500 text-white px-6 py-2 rounded flex items-center hover:bg-blue-600">
+          <Link
+            to="/employee-form"
+            className="bg-blue-500 text-white px-6 py-2 rounded flex items-center hover:bg-blue-600"
+          >
             <FaPlus className="mr-2" /> Add Employee
           </Link>
         </div>
@@ -369,7 +455,10 @@ const EmployeeTable = () => {
             {page.map((row) => {
               prepareRow(row);
               return (
-                <tr {...row.getRowProps()} className="border-b hover:bg-gray-50">
+                <tr
+                  {...row.getRowProps()}
+                  className="border-b hover:bg-gray-50"
+                >
                   {row.cells.map((cell) => (
                     <td
                       {...cell.getCellProps()}
@@ -387,16 +476,35 @@ const EmployeeTable = () => {
         {/* Pagination */}
         <div className="flex justify-between items-center p-4">
           <div>
-            Page <strong>{pageIndex + 1} of {pageOptions.length}</strong>
+            Page{" "}
+            <strong>
+              {pageIndex + 1} of {pageOptions.length}
+            </strong>
           </div>
           <div className="space-x-2">
-            <button onClick={() => previousPage()} disabled={!canPreviousPage} className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50">Previous</button>
-            <button onClick={() => nextPage()} disabled={!canNextPage} className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50">Next</button>
+            <button
+              onClick={() => previousPage()}
+              disabled={!canPreviousPage}
+              className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => nextPage()}
+              disabled={!canNextPage}
+              className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
         </div>
       </div>
 
-      <EmployeeDetailsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} employee={selectedEmployee} />
+      <EmployeeDetailsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        employee={selectedEmployee}
+      />
     </div>
   );
 };
