@@ -13,6 +13,15 @@ const googleLogin = async (req, res) => {
     }
 
     // ✅ Verify Google token
+    console.log("GOOGLE_CLIENT_ID from env:", process.env.GOOGLE_CLIENT_ID);
+    console.log("GOOGLE_CLIENT_ID from client instance:", client._clientId);
+    try {
+      const decoded = jwt.decode(token);
+      console.log("Decoded token payload:", decoded);
+    } catch (decodeErr) {
+      console.error("Failed to decode token:", decodeErr);
+    }
+
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,

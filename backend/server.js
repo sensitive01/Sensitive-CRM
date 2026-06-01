@@ -64,6 +64,8 @@
 
 const express = require("express");
 const dotenv = require("dotenv");
+dotenv.config();
+
 const bodyParser = require("body-parser");
 const db = require("./config/db");
 const cors = require("cors");
@@ -90,8 +92,6 @@ const previewRoutes = require("./routes/previewRoutes");
 
 // ✅ NEW GOOGLE AUTH ROUTE
 const googleAuthRoutes = require("./routes/googleAuthRoutes");
-
-dotenv.config();
 
 const app = express();
 const PORT = 3000;
