@@ -9,7 +9,37 @@ import { FaPlus, FaFileDownload, FaFilter, FaEye, FaExclamationTriangle } from "
 import { Link } from "react-router-dom";
 import * as XLSX from "xlsx";
 
-const AttendanceTable = () => {
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null, errorInfo: null };
+    }
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+    componentDidCatch(error, errorInfo) {
+        this.setState({ errorInfo });
+        console.error("ErrorBoundary caught an error", error, errorInfo);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ padding: 20, color: 'red', zIndex: 9999, position: 'relative', background: 'white' }}>
+                    <h2>Something went wrong in AttendanceTable.</h2>
+                    <details style={{ whiteSpace: 'pre-wrap' }}>
+                        {this.state.error && this.state.error.toString()}
+                        <br />
+                        {this.state.errorInfo && this.state.errorInfo.componentStack}
+                    </details>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+
+const AttendanceTableContent = () => {
     const employeeId = localStorage.getItem("empId");
     const [allAttendanceRecords, setAllAttendanceRecords] = useState([]);
     const [attendanceRecords, setAttendanceRecords] = useState([]);
@@ -54,14 +84,17 @@ const AttendanceTable = () => {
     useEffect(() => {
         const fetchAttendance = async () => {
             try {
-                const response = await fetch(`https://sensitive-crm.onrender.com/attendance/attendance-all/${employeeId}`);
-                if (!response.ok) throw new Error("Failed to fetch attendance data.");
+                const response = await fetch(`${import.meta.env.VITE_BASE_URL}/attendance-all/${employeeId}`);
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.message || "Failed to fetch attendance data.");
+                }
                 const data = await response.json();
                 data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 setAllAttendanceRecords(data);
                 const today = new Date().toISOString().split("T")[0];
                 setAttendanceRecords(data.filter(record =>
-                    new Date(record.createdAt).toISOString().split("T")[0] === today
+                    record.createdAt && new Date(record.createdAt).toISOString().split("T")[0] === today
                 ));
             } catch (err) {
                 setError(err.message);
@@ -108,7 +141,7 @@ const AttendanceTable = () => {
         const exportData = attendanceRecords.map((record, index) => ({
             "S.No": index + 1,
             "Employee ID": record.empId,
-            Name: record.employeeName.toUpperCase(),
+            Name: record.employeeName ? record.employeeName.toUpperCase() : "N/A",
             Status: record.createdAt ? "Present" : "Absent",
             Date: formatDate(record.createdAt),
             "Login Time": formatTimeFull(record.createdAt),
@@ -124,6 +157,7 @@ const AttendanceTable = () => {
 
     const handleDateFilterChange = () => {
         const filteredData = allAttendanceRecords.filter(record => {
+            if (!record.createdAt) return false;
             const recordDate = new Date(record.createdAt).toISOString().split("T")[0];
             const start = startDate ? new Date(startDate).toISOString().split("T")[0] : null;
             const end = endDate ? new Date(endDate).toISOString().split("T")[0] : null;
@@ -143,11 +177,11 @@ const AttendanceTable = () => {
         { Header: "S.No", accessor: (row, index) => index + 1 },
         {
             Header: "Employee",
-            accessor: row => `${row.employeeId} ${row.employeeName} `.toLowerCase(),
+            accessor: row => `${row.employeeId || ""} ${row.employeeName || ""} `.toLowerCase(),
             Cell: ({ row }) => (
                 <div className="flex flex-col">
-                    <span className="font-semibold">{row.original.employeeId}</span>
-                    <span className="text-blue-600 font-semibold">{row.original.employeeName.toUpperCase()}</span>
+                    <span className="font-semibold">{row.original.employeeId || "N/A"}</span>
+                    <span className="text-blue-600 font-semibold">{row.original.employeeName ? row.original.employeeName.toUpperCase() : "N/A"}</span>
                 </div>
             ),
         },
@@ -514,5 +548,11 @@ const AttendanceTable = () => {
     
     );
 };
+
+const AttendanceTable = () => (
+    <ErrorBoundary>
+        <AttendanceTableContent />
+    </ErrorBoundary>
+);
 
 export default AttendanceTable;

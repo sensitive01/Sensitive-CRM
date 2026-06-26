@@ -1,5 +1,6 @@
 const attendanceModel = require("../models/attendanceModel");
 const employeeSchema = require("../models/employeeSchema");
+const Admin = require("../models/superadminModel");
 const { uploadImage } = require("../config/cloudinary"); 
 
 /* =============================== CREATE ATTENDANCE (LOGIN) ================================ */ 
@@ -35,17 +36,30 @@ exports.getAllAttendance = async (req, res) => {
     try { 
         const { id } = req.params; 
         console.log("GET Attendance Records:", id); 
-        const empdata = await employeeSchema.findById(id, { role: 1 }); 
+        const empdata = await employeeSchema.findById(id, { role: 1, empId: 1 }); 
+        let isAdmin = false;
 
         if (!empdata) { 
-            return res.status(404).json({ message: "Employee not found" }); 
-        } 
+            const superadminData = await Admin.findById(id);
+            if (superadminData) {
+                isAdmin = true;
+            } else {
+                return res.status(404).json({ message: "Employee or Admin not found" }); 
+            }
+        } else if (empdata.role === "admin" || empdata.role === "Superadmin" || empdata.role === "superadmin") {
+            isAdmin = true;
+        }
 
         let attendanceRecords; 
-        if (empdata.role === "admin") { 
+        if (isAdmin) { 
             attendanceRecords = await attendanceModel.find().sort({ createdAt: -1 }); 
         } else { 
-            attendanceRecords = await attendanceModel.find({ employeeId: empdata._id }).sort({ createdAt: -1 }); 
+            attendanceRecords = await attendanceModel.find({ 
+                $or: [
+                    { employeeId: empdata._id },
+                    { employeeId: empdata.empId }
+                ]
+            }).sort({ createdAt: -1 }); 
         } 
 
         console.log("GET Attendance Records:", attendanceRecords); 
