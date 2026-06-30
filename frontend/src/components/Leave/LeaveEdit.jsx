@@ -5,6 +5,7 @@ import { employeename, getLeaveById } from "../../api/services/projectServices";
 
 function LeaveEdit() {
   const [leave, setLeave] = useState({
+    empId: "",
     employee: "",
     leaveCategory: "",
     leaveType: "",
@@ -160,12 +161,16 @@ function LeaveEdit() {
     }
 
     try {
+      const token = localStorage.getItem("token");
       const response = id
         ? await axios.put(
             `${import.meta.env.VITE_BASE_URL}/leaves/update/${id}`,
             formData,
             {
-              headers: { "Content-Type": "multipart/form-data" },
+              headers: { 
+                "Content-Type": "multipart/form-data",
+                Authorization: `Bearer ${token}`
+              },
             },
           )
         : await axios.post(
@@ -179,6 +184,7 @@ function LeaveEdit() {
       if (response.status === 200 || response.status === 201) {
         alert("Leave data submitted successfully!");
         setLeave({
+          empId: "",
           employee: "",
           leaveCategory: "",
           leaveType: "",
@@ -235,15 +241,22 @@ function LeaveEdit() {
                   Select Employee:
                 </label>
                 <select
-                  name="employee"
-                  value={leave.employee}
-                  onChange={handleChange}
+                  name="empId"
+                  value={leave.empId || ""}
+                  onChange={(e) => {
+                    const selectedEmp = employees.find(emp => emp.empId === e.target.value);
+                    setLeave(prev => ({ 
+                      ...prev, 
+                      empId: e.target.value, 
+                      employee: selectedEmp ? selectedEmp.name : "" 
+                    }));
+                  }}
                   required
                   className="border border-blue-300 p-2 w-full rounded"
                 >
                   <option value="">Select Employee</option>
                   {employees.map((employee) => (
-                    <option key={employee._id} value={employee.name}>
+                    <option key={employee._id} value={employee.empId}>
                       {employee.name}
                     </option>
                   ))}

@@ -12,42 +12,34 @@ import axios from "axios";
 
 
 export const verifyLogin = async (formData) => {
-  try {
-    const response = await projectServices.post(`/employee-login/login`, formData);
+  const response = await projectServices.post(`/employee-login/login`, formData);
 
-    // Store Mongo _id in empId (frontend uses this)
-    localStorage.setItem("empId", response.data.employee._id);
+  // Store Mongo _id in empId (frontend uses this)
+  localStorage.setItem("empId", response.data.employee._id);
 
-    // Store actual employee ID (empId in DB) in userId
-    localStorage.setItem("userId", response.data.employee.empId);
+  // Store actual employee ID (empId in DB) in userId
+  localStorage.setItem("userId", response.data.employee.empId);
 
-    localStorage.setItem("role", response.data.employee.role);
+  localStorage.setItem("role", response.data.employee.role);
 
-    // Set expiration 10 mins
-    const expirationTime = new Date().getTime() + 600000;
-    localStorage.setItem("tokenExpiration", expirationTime.toString());
-
-    return response;
-  } catch (err) {
-    throw err;
+  if (response.data.token) {
+    localStorage.setItem("token", response.data.token);
   }
+
+  // Set expiration 10 mins
+  const expirationTime = new Date().getTime() + 600000;
+  localStorage.setItem("tokenExpiration", expirationTime.toString());
+
+  return response;
 };
 
 
 export const sendOTP = async (data) => {
-  try {
-    return await projectServices.post(`/email/send-otp`, data);
-  } catch (error) {
-    throw error;
-  }
+  return await projectServices.post(`/email/send-otp`, data);
 };
 
 export const verifyOTP = async (data) => {
-  try {
-    return await projectServices.post(`/email/verify-otp`, data);
-  } catch (error) {
-    throw error;
-  }
+  return await projectServices.post(`/email/verify-otp`, data);
 };
 
 
@@ -179,7 +171,7 @@ export const getTasks = async () => {
 
 export const getMyTasks = async (name) => {
   try {
-    return await API.get(`/task/my-tasks/${name}`);
+    return await projectServices.get(`/task/my-tasks/${name}`);
   } catch (error) {
     return error.response;
   }
@@ -255,7 +247,7 @@ export const getTotalProjects = async () => {
 
 export const getProjectsByEmployee = async (empId) => {
   try {
-    const response = await projectAPI.get(`/assigned/${empId}`);
+    const response = await projectServices.get(`/assigned/${empId}`);
     return response;
   } catch (err) {
     console.error("Error fetching employee projects:", err);
@@ -601,24 +593,24 @@ export const deleteExpenseById = async (expenseId) => {
 // ================= GOOGLE LOGIN =================
 
 export const googleLogin = async (googleToken) => {
-  try {
-    const response = await projectServices.post(
-      "/auth/google-login",
-      { token: googleToken }
-    );
+  const response = await projectServices.post(
+    "/auth/google-login",
+    { token: googleToken }
+  );
 
-    const employee = response.data.employee;
+  const employee = response.data.employee;
 
     // Same storage pattern as verifyLogin
     localStorage.setItem("empId", employee._id);
     localStorage.setItem("stid", employee.empId);
     localStorage.setItem("role", employee.role);
 
-    const expirationTime = new Date().getTime() + 600000;
-    localStorage.setItem("tokenExpiration", expirationTime.toString());
-
-    return response;
-  } catch (err) {
-    throw err;
+  if (response.data.token) {
+    localStorage.setItem("token", response.data.token);
   }
+
+  const expirationTime = new Date().getTime() + 600000;
+  localStorage.setItem("tokenExpiration", expirationTime.toString());
+
+  return response;
 };

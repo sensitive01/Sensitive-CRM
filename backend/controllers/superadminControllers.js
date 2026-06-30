@@ -27,7 +27,7 @@ exports.createSuperAdmin = async (req, res) => {
   }
 };
 exports.updateSuperAdmin = async (req, res) => {
-  const { id } = req.params; 
+  const { id } = req.params;
   const { name, officeEmail, password, adminType } = req.body;
   if (!name && !officeEmail && !password && !adminType) {
     return res.status(400).json({ message: 'At least one field is required to update' });

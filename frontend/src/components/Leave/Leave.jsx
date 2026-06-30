@@ -12,6 +12,7 @@ function Leave() {
     localStorage.getItem("role") || "Superadmin",
   );
   const [leave, setLeave] = useState({
+    empId: "",
     employee: "",
     leaveCategory: "",
     leaveType: "",
@@ -42,7 +43,7 @@ function Leave() {
           setError(null);
 
           if (role !== "Superadmin" && response.data.length > 0) {
-            setLeave((prev) => ({ ...prev, employee: response.data[0].name }));
+            setLeave((prev) => ({ ...prev, employee: response.data[0].name, empId: response.data[0].empId }));
           }
         } else {
           throw new Error("Failed to fetch employees.");
@@ -124,6 +125,7 @@ function Leave() {
       if (response.status === 201) {
         alert("Leave data submitted successfully!");
         setLeave({
+          empId: "",
           employee: "",
           leaveCategory: "",
           leaveType: "",
@@ -177,15 +179,22 @@ function Leave() {
                   Select Employee:
                 </label>
                 <select
-                  name="employee"
-                  value={leave.employee}
-                  onChange={handleChange}
+                  name="empId"
+                  value={leave.empId}
+                  onChange={(e) => {
+                    const selectedEmp = employees.find(emp => emp.empId === e.target.value);
+                    setLeave(prev => ({ 
+                      ...prev, 
+                      empId: e.target.value, 
+                      employee: selectedEmp ? selectedEmp.name : "" 
+                    }));
+                  }}
                   required
                   className="border border-blue-300 p-2 w-full rounded"
                 >
                   <option value="">Select Employee</option>
                   {employees.map((employee) => (
-                    <option key={employee._id} value={employee.name}>
+                    <option key={employee._id} value={employee.empId}>
                       {employee.name}
                     </option>
                   ))}

@@ -1,83 +1,125 @@
 const axios = require('axios');
 
+// Helper to delay execution (Google requires ~2 seconds before a next_page_token becomes valid)
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1); 
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2); 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  return R * c; // Distance in km
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI/180);
+}
+
 const getNearbyPlaces = async (req, res) => {
   const { latitude, longitude, radius, type } = req.query;
 
-  if (!latitude || !longitude || !type) {
+  if (!latitude || !longitude || !radius || !type) {
     return res.status(400).json({ message: 'Missing required query parameters' });
   }
 
-  // Estimate bounding box: 1 degree is ~111km. 
-  const rDeg = (parseFloat(radius) || 10) / 111.0;
-  const lonMin = parseFloat(longitude) - rDeg;
-  const lonMax = parseFloat(longitude) + rDeg;
-  const latMin = parseFloat(latitude) - rDeg;
-  const latMax = parseFloat(latitude) + rDeg;
-
-  // Use Nominatim API which is specifically built for fast text search and won't timeout
-  // We use viewbox and bounded=1 so it ONLY searches in the local radius square
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(type)}&format=jsonv2&addressdetails=1&limit=30&viewbox=${lonMin},${latMin},${lonMax},${latMax}&bounded=1`;
+  const apiKey = process.env.GOOGLE_API_KEY;
+  const searchQuery = encodeURIComponent(type.replace(/_/g, ' '));
+  
+  // Legacy API with rankby=distance (radius cannot be included in the URL)
+  const baseUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&keyword=${searchQuery}&rankby=distance&key=${apiKey}`;
 
   try {
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'SensitiveCRM/1.0 (Contact: admin@sensitivecrm.com)'
-      }
-    });
+    let allResults = [];
+    let url = baseUrl;
+    let hasNextPage = true;
+    let pageCount = 0;
+    
+    let originalStatus = "ZERO_RESULTS";
+    const targetRadius = parseFloat(radius);
 
-    const elements = response.data || [];
-
-    // Map Nominatim data to look EXACTLY like Google Maps data
-    const formattedResults = elements.map(el => {
-      // Extract a clean name
-      const name = el.name || (el.display_name ? el.display_name.split(',')[0] : "Unnamed Location");
-
-      // Extract a clean address
-      let address = el.display_name || "Address not available";
-      // Attempt to shorten the long display_name to just street and city
-      if (el.address) {
-        const street = el.address.road || el.address.pedestrian || '';
-        const house = el.address.house_number || '';
-        const city = el.address.city || el.address.town || el.address.village || el.address.county || '';
-        if (street || city) {
-          address = `${house} ${street}`.trim() + (city ? `, ${city}` : '');
-          if (address.startsWith(',')) address = address.substring(1).trim();
+    while (hasNextPage && pageCount < 3) {
+      const response = await axios.get(url);
+      
+      if (response.data.status === 'OK') {
+        originalStatus = 'OK';
+        
+        let exceededRadius = false;
+        for (const place of response.data.results) {
+          const placeLat = place.geometry?.location?.lat;
+          const placeLng = place.geometry?.location?.lng;
+          
+          if (placeLat && placeLng) {
+            const dist = getDistanceFromLatLonInKm(
+              parseFloat(latitude), 
+              parseFloat(longitude), 
+              placeLat, 
+              placeLng
+            );
+            
+            if (dist <= targetRadius) {
+              allResults.push(place);
+            } else {
+              // Since results are strictly ordered by distance, once we hit a place outside the radius,
+              // we know all subsequent places are also outside. We can stop requesting more pages.
+              exceededRadius = true;
+              break;
+            }
+          }
         }
+        
+        if (exceededRadius) {
+          hasNextPage = false;
+          break;
+        }
+
+      } else if (response.data.status !== 'ZERO_RESULTS' && response.data.status !== 'INVALID_REQUEST') {
+        originalStatus = response.data.status;
+        console.error("API Error Status:", response.data.status);
+        break;
       }
 
-      // Pseudo ratings for UI
-      const pseudoRating = (Math.random() * (5.0 - 3.5) + 3.5).toFixed(1);
-      const pseudoRatingsTotal = Math.floor(Math.random() * 800) + 10;
-
-      return {
-        place_id: el.osm_id ? el.osm_id.toString() : Math.random().toString(),
-        name: name,
-        vicinity: address,
-        rating: pseudoRating,
-        user_ratings_total: pseudoRatingsTotal,
-        types: [el.type || el.category || type],
-        business_status: "OPERATIONAL"
-      };
-    });
-
-    // Remove duplicates
-    const uniqueResults = [];
-    const ids = new Set();
-    for (const item of formattedResults) {
-      if (!ids.has(item.place_id)) {
-        ids.add(item.place_id);
-        uniqueResults.push(item);
+      if (response.data.next_page_token && !exceededRadius) {
+        await sleep(2000);
+        url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken=${response.data.next_page_token}&key=${apiKey}`;
+        pageCount++;
+      } else {
+        hasNextPage = false;
       }
     }
 
     res.json({
-      status: "OK",
-      results: uniqueResults
+      status: originalStatus,
+      results: allResults
     });
   } catch (error) {
-    console.error('Error fetching nearby places from Nominatim:', error.message);
-    res.status(500).json({ status: "ERROR", message: 'Failed to fetch free places data' });
+    console.error('Error fetching nearby places:', error.message);
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
-module.exports = { getNearbyPlaces };
+const getPlacePhoto = async (req, res) => {
+  const { photoreference } = req.query;
+  if (!photoreference) return res.status(400).json({ error: 'Missing photoreference' });
+
+  const apiKey = process.env.GOOGLE_API_KEY;
+  const url = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoreference}&key=${apiKey}`;
+
+  try {
+    const response = await axios({
+      method: 'GET',
+      url: url,
+      responseType: 'stream',
+    });
+    // Pipe the image stream directly to the frontend
+    response.data.pipe(res);
+  } catch (error) {
+    console.error('Error fetching place photo:', error.message);
+    res.status(500).json({ error: 'Failed to fetch place photo' });
+  }
+};
+
+module.exports = { getNearbyPlaces, getPlacePhoto };

@@ -7,7 +7,15 @@ exports.createLeaveRequest = async (req, res) => {
     console.log("CREATE LEAVE REQUEST", leaveData);
     if (req.file) {
       leaveData.attachment = await uploadImage(req.file.buffer);
-  }
+    }
+    
+    // Auto-fetch empId if only employee name is provided
+    if (!leaveData.empId && leaveData.employee) {
+      const empInfo = await employeeSchema.findOne({ name: leaveData.employee });
+      if (empInfo) {
+        leaveData.empId = empInfo.empId;
+      }
+    }
 
     const leaveRequest = new leaveModel(leaveData);
     await leaveRequest.save();
@@ -28,11 +36,11 @@ exports.getAllLeaveRequests = async (req, res) => {
     console.log("Employee Data:", empdata);
     let leaves;
     if(empdata.role ==="Superadmin"){
-      leaves = await leaveModel.find()
+      leaves = await leaveModel.find().sort({ createdAt: -1 });
     }else{
       leaves = await leaveModel.find({
-        "employee":empdata.name
-      });
+        empId: empdata.empId
+      }).sort({ createdAt: -1 });
     }
     console.log("Leave:", leaves);
     res.status(200).json(leaves);
@@ -92,6 +100,11 @@ exports.deleteLeaveRequestById = async (req, res) => {
 exports.updateLeaveRequestStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
+
+  // Authorization Check
+  if (req.user && req.user.role !== "Superadmin") {
+    return res.status(403).json({ message: "Forbidden: Only Superadmins can change leave status" });
+  }
 
   if (!status) {
     return res.status(400).json({ message: 'Status is required' });
@@ -182,8 +195,8 @@ exports.getLeaveRequestsByEmployeeId = async (req, res) => {
       return res.status(404).json({ message: 'Employee not found' });
     }
 
-    // Fetch leaves for this employee
-    const leaves = await leaveModel.find({ employee: employee.name });
+    // Fetch leaves for this employee using empId
+    const leaves = await leaveModel.find({ empId: empId });
     console.log(`Leaves for ${empId}:`, leaves);
 
     res.status(200).json(leaves);
@@ -215,7 +228,7 @@ exports.getLeaveRequestsByEmployeeCurrentMonth = async (req, res) => {
 
     // Find leaves for this employee within current month
     const leaves = await leaveModel.find({
-      employee: employee.name,
+      empId: empId,
       startDate: { $lte: endOfMonth },
       endDate: { $gte: startOfMonth }
     });

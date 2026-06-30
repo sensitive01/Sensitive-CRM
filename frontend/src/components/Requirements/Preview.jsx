@@ -4,8 +4,6 @@ import { useLocation } from "react-router-dom";
 const Preview = () => {
   const { state } = useLocation();
 
-  if (!state) return <div className="p-10 text-center">No Data Found</div>;
-
   const [clientInfo, setClientInfo] = useState({
     name: "",
     phone: "",
@@ -13,6 +11,8 @@ const Preview = () => {
     company: "",
     notes: "",
   });
+
+  if (!state) return <div className="p-10 text-center">No Data Found</div>;
 
   const handleClientChange = (e) => {
     const { name, value } = e.target;

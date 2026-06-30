@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const attendanceModel = require("../models/attendanceModel");
 const employeeSchema = require("../models/employeeSchema");
 const Admin = require("../models/superadminModel");
@@ -35,6 +36,9 @@ exports.createAttendance = async (req, res) => {
 exports.getAllAttendance = async (req, res) => { 
     try { 
         const { id } = req.params; 
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: "Invalid ID format" });
+        }
         console.log("GET Attendance Records:", id); 
         const empdata = await employeeSchema.findById(id, { role: 1, empId: 1 }); 
         let isAdmin = false;
@@ -75,6 +79,9 @@ exports.getAllAttendance = async (req, res) => {
 exports.logoutAttendance = async (req, res) => { 
     try { 
         const { id } = req.params; 
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: "Invalid ID format" });
+        }
         const { logouttime, workReport } = req.body; 
 
         if (!logouttime) { 

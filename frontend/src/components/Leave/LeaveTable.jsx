@@ -79,12 +79,14 @@ const LeaveTable = () => {
 
   const handleStatusChange = async (leaveId, newStatus) => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.put(
         `${import.meta.env.VITE_BASE_URL}/leaves/update-status/${leaveId}`,
         {
           status: newStatus,
           statusChangeDate: new Date().toISOString(),
         },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.status === 200) {
@@ -114,22 +116,26 @@ const LeaveTable = () => {
         );
       }
     } catch (err) {
-      setError("Failed to update status");
+      console.error("Status Update Error:", err.response || err);
+      setError(`Failed to update status: ${err.response?.data?.message || err.message}`);
     }
   };
 
   const handleDelete = async (leaveId) => {
     if (window.confirm("Are you sure you want to delete this leave?")) {
       try {
+        const token = localStorage.getItem("token");
         const response = await axios.delete(
           `${import.meta.env.VITE_BASE_URL}/leaves/delete/${leaveId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         if (response.status === 200) {
           setLeaves(leaves.filter((leave) => leave._id !== leaveId));
           setAllLeaves(allLeaves.filter((leave) => leave._id !== leaveId));
         }
       } catch (err) {
-        setError("Failed to delete leave");
+        console.error("Delete Error:", err.response || err);
+        setError(`Failed to delete leave: ${err.response?.data?.message || err.message}`);
       }
     }
   };

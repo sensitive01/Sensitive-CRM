@@ -482,7 +482,7 @@ function SearchLeads() {
                           Opening Hours
                         </h4>
                         <ul className="text-sm">
-                          {placeDetails.opening_hours.weekday_text.map(
+                          {placeDetails.opening_hours.weekday_text?.map(
                             (day, index) => (
                               <li key={index} className="mb-1">
                                 {day}
@@ -492,11 +492,10 @@ function SearchLeads() {
                         </ul>
                         <p className="mt-2 text-sm">
                           <span
-                            className={`px-2 py-1 rounded ${
-                              placeDetails.opening_hours.open_now
+                            className={`px-2 py-1 rounded ${placeDetails.opening_hours.open_now
                                 ? "bg-green-100 text-green-800"
                                 : "bg-red-100 text-red-800"
-                            }`}
+                              }`}
                           >
                             {placeDetails.opening_hours.open_now
                               ? "Open now"
@@ -530,7 +529,7 @@ function SearchLeads() {
                                 className="bg-gray-200 h-32 rounded overflow-hidden"
                               >
                                 <img
-                                  src={`https://picsum.photos/seed/${encodeURIComponent(placeDetails.name + index)}/400/320`}
+                                  src={photo.photo_reference ? `${import.meta.env.VITE_BASE_URL}/api/places/photo?photoreference=${photo.photo_reference}` : `https://picsum.photos/seed/${encodeURIComponent(placeDetails.name + index)}/400/320`}
                                   alt={`${placeDetails.name} - Photo ${index + 1}`}
                                   className="w-full h-full object-cover"
                                 />
@@ -563,6 +562,7 @@ function SearchLeads() {
                                         }
                                         alt={review.author_name || "Reviewer"}
                                         className="h-full w-full object-cover"
+                                        referrerPolicy="no-referrer"
                                       />
                                     </div>
                                     <div>
