@@ -29,8 +29,9 @@ const getNearbyPlaces = async (req, res) => {
   const apiKey = process.env.GOOGLE_API_KEY;
   const searchQuery = encodeURIComponent(type.replace(/_/g, ' '));
   
-  // Legacy API with rankby=distance (radius cannot be included in the URL)
-  const baseUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&keyword=${searchQuery}&rankby=distance&key=${apiKey}`;
+  // We use radius (in meters) instead of rankby=distance so we can search further out.
+  const radiusInMeters = parseFloat(radius) * 1000;
+  const baseUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&keyword=${searchQuery}&radius=${radiusInMeters}&key=${apiKey}`;
 
   try {
     let allResults = [];
@@ -62,19 +63,12 @@ const getNearbyPlaces = async (req, res) => {
             
             if (dist <= targetRadius) {
               allResults.push(place);
-            } else {
-              // Since results are strictly ordered by distance, once we hit a place outside the radius,
-              // we know all subsequent places are also outside. We can stop requesting more pages.
-              exceededRadius = true;
-              break;
             }
           }
         }
         
-        if (exceededRadius) {
-          hasNextPage = false;
-          break;
-        }
+        // Since results are ordered by prominence (not distance), we don't break early.
+        // We let it fetch all 3 pages if available to get as many results as possible within the radius.
 
       } else if (response.data.status !== 'ZERO_RESULTS' && response.data.status !== 'INVALID_REQUEST') {
         originalStatus = response.data.status;
@@ -82,7 +76,7 @@ const getNearbyPlaces = async (req, res) => {
         break;
       }
 
-      if (response.data.next_page_token && !exceededRadius) {
+      if (response.data.next_page_token) {
         await sleep(2000);
         url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken=${response.data.next_page_token}&key=${apiKey}`;
         pageCount++;
