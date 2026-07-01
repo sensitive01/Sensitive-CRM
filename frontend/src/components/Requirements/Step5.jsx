@@ -80,6 +80,7 @@ const Step5 = ({ onPrev, selections, onNext }) => {
                   <th className="border px-4 py-2 text-left">Web / App</th>
                   <th className="border px-4 py-2 text-left">Operations</th>
                   <th className="border px-4 py-2 text-left">Use Cases</th>
+                  <th className="border px-4 py-2 text-center w-16">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -128,6 +129,17 @@ const Step5 = ({ onPrev, selections, onNext }) => {
                         }
                         className="w-full border rounded px-2 py-1 text-sm"
                       />
+                    </td>
+                    <td className="border px-4 py-2 text-center">
+                      {table.length > 1 && (
+                        <button
+                          onClick={() => removeRow(tableIndex, rowIndex)}
+                          className="text-red-600 hover:text-red-800 font-bold"
+                          title="Remove Row"
+                        >
+                          X
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

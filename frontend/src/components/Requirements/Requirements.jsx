@@ -90,37 +90,50 @@ const handleDelete = async (row) => {
 
 
   /* ---------------- HELPERS ---------------- */
+  const hasData = (val) => {
+    if (!val) return false;
+    if (typeof val === "object") {
+      if (Object.keys(val).length === 0) return false;
+      return Object.values(val).some((v) => Boolean(v));
+    }
+    return Boolean(val);
+  };
+
   const renderDevRequirements = (requirements) => {
     const dev = requirements?.["Step 1 – Development Requirements"];
     if (!dev) return "—";
+    const activeItems = Object.entries(dev)
+      .filter(([_, val]) => hasData(val))
+      .map(([key]) => key);
+
+    if (activeItems.length === 0) return "—";
+
     return (
       <ol className="list-decimal pl-4 text-left">
-        {Object.keys(dev).map((item, i) => (
+        {activeItems.map((item, i) => (
           <li key={i}>{item}</li>
         ))}
       </ol>
     );
   };
 
-  const purchaseHeadings = [
-    "Number of Domains",
-    "Hosting Server",
-    "Hosting Service Provider",
-    "Media Storage",
-    "Mail Account(s)",
-    "API Paid Subscriptions",
-    "Theme License | Plugins",
-    "Other Purchases",
-    "Renewal & Maintenance",
-  ];
+  const renderPurchaseRequirements = (requirements) => {
+    const purchase = requirements?.["Step 3 – Purchases Requirements"];
+    if (!purchase) return "—";
+    const activeItems = Object.entries(purchase)
+      .filter(([_, val]) => hasData(val))
+      .map(([key]) => key);
 
-  const renderPurchaseRequirements = () => (
-    <ol className="list-decimal pl-4 text-left">
-      {purchaseHeadings.map((item, i) => (
-        <li key={i}>{item}</li>
-      ))}
-    </ol>
-  );
+    if (activeItems.length === 0) return "—";
+
+    return (
+      <ol className="list-decimal pl-4 text-left">
+        {activeItems.map((item, i) => (
+          <li key={i}>{item}</li>
+        ))}
+      </ol>
+    );
+  };
 
   /* ---------------- TABLE COLUMNS ---------------- */
   const columns = useMemo(
@@ -139,7 +152,7 @@ const handleDelete = async (row) => {
       },
       {
         Header: "Purchase Requirements",
-        Cell: () => renderPurchaseRequirements(),
+        Cell: ({ row }) => renderPurchaseRequirements(row.original.requirements),
       },
       {
         Header: "Action",
@@ -219,9 +232,9 @@ const handleDelete = async (row) => {
           <table {...getTableProps()} className="w-full border">
             <thead className="bg-blue-600 text-white">
               {headerGroups.map((hg) => (
-                <tr {...hg.getHeaderGroupProps()} key={hg.id}>
+                <tr {...hg.getHeaderGroupProps()}>
                   {hg.headers.map((col) => (
-                    <th key={col.id} className="p-3 text-center">
+                    <th {...col.getHeaderProps()} className="p-3 text-center">
                       {col.render("Header")}
                     </th>
                   ))}
@@ -233,9 +246,9 @@ const handleDelete = async (row) => {
               {page.map((row) => {
                 prepareRow(row);
                 return (
-                  <tr key={row.id} className="border-b align-top">
+                  <tr {...row.getRowProps()} className="border-b align-top">
                     {row.cells.map((cell) => (
-                      <td key={cell.column.id} className="p-3">
+                      <td {...cell.getCellProps()} className="p-3">
                         {cell.render("Cell")}
                       </td>
                     ))}

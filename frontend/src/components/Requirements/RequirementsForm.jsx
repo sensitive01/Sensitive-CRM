@@ -104,62 +104,22 @@ const RequirementsForm = () => {
   /* ================= WEBSITE DESIGNING (ALL SUB DATA REQUIRED) ================= */
 
   const validateStep1 = () => {
-    // Required main dropdowns
-    const requiredMainDropdowns = [
+    // Only validate that "Others" text inputs are filled if "Others" is selected
+    const mainDropdowns = [
       "Web Portal Development",
       "Mobile App Development",
       "Custom Software Development",
       "API Integration",
     ];
 
-    for (let key of requiredMainDropdowns) {
+    for (let key of mainDropdowns) {
       const selected = selections[key];
-      if (!selected) return false;
-
       if (selected === "Others" && !selections[`${key}_other`]?.trim()) {
         return false;
       }
     }
 
-    // Website Designing fields
-    const websiteDesigningFields = [
-      "Static Website Pages",
-      "Themes License",
-      "Plugins",
-      "Number of Pages WP",
-      "Subscription / Blogs",
-      "Number of Pages Ecom",
-      "Number of Products",
-    ];
-
-    for (let field of websiteDesigningFields) {
-      if (!selections[field] || selections[field].toString().trim() === "")
-        return false;
-    }
-
-    return true;
-  };
-
-  /* ================= STEP 2 VALIDATION ================= */
-
-  const validateStep2 = () => {
-    const requiredTech = [
-      "1. UI / UX Designing",
-      "2. Front-End Development",
-      "3. Web Service Backend API",
-      "4. Database",
-      "5. Contents",
-      "6. Testing / Staging",
-      "7. 3rd Party API Integration(s)",
-      "8. SMTP Mailer Service",
-    ];
-
-    for (let key of requiredTech) {
-      const selected = selections[key];
-      if (!selected || selected.length === 0) return false;
-    }
-
-    return true;
+    return true; // Don't force users to fill out everything
   };
 
   return (
