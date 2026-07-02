@@ -101,6 +101,7 @@ app.use(express.json());
 
 // ---------------- ROUTES ----------------
 app.use("/", attendanceRoutes);
+app.use("/attendance", attendanceRoutes);
 app.use("/clients", clientRoutes);
 app.use("/leaves", leaveRoutes);
 app.use("/api/attendance", attendanceRoutes);

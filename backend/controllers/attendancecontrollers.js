@@ -8,13 +8,28 @@ const { uploadImage } = require("../config/cloudinary");
 exports.createAttendance = async (req, res) => { 
     try { 
         console.log("CREATE Attendance", req.body); 
-        const { employeeId } = req.body;
+        const { employeeId, date } = req.body;
 
         // Validate employee 
         const empdata = await employeeSchema.findById(employeeId, { name: 1, empId: 1 }); 
         if (!empdata) { 
             return res.status(404).json({ message: "Employee not found" });
         } 
+
+        // Check if attendance already marked for today
+        const checkDate = date || new Date().toISOString().split("T")[0];
+        const existingAttendance = await attendanceModel.findOne({
+            $or: [
+                { employeeId: empdata._id },
+                { employeeId: empdata._id.toString() },
+                { employeeId: empdata.empId }
+            ],
+            date: checkDate
+        });
+
+        if (existingAttendance) {
+            return res.status(400).json({ message: "Attendance already marked for today" });
+        }
 
         const attendance = new attendanceModel({ 
             ...req.body, 
