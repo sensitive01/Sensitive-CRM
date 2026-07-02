@@ -56,11 +56,14 @@ const sendOTP = async (req, res) => {
 // ================= VERIFY OTP =================
 const verifyOTP = async (req, res) => {
   try {
-    const { email, otp } = req.body;
+    let { email, otp } = req.body;
 
     if (!email || !otp) {
       return res.status(400).json({ message: "Email and OTP required" });
     }
+
+    email = email.trim();
+    otp = String(otp).trim();
 
     const stored = otpStore.get(email);
     if (!stored) {
@@ -72,7 +75,7 @@ const verifyOTP = async (req, res) => {
       return res.status(400).json({ message: "OTP expired" });
     }
 
-    if (hashOTP(String(otp)) !== stored.otp) {
+    if (hashOTP(otp) !== stored.otp) {
       return res.status(401).json({ message: "Invalid OTP" });
     }
 

@@ -169,9 +169,9 @@ export const getTasks = async () => {
   }
 };
 
-export const getMyTasks = async (name) => {
+export const getMyTasks = async (empId) => {
   try {
-    return await projectServices.get(`/task/my-tasks/${name}`);
+    return await projectServices.get(`/task/employee/${empId}`);
   } catch (error) {
     return error.response;
   }

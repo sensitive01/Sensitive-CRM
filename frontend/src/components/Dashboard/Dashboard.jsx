@@ -56,11 +56,12 @@ export default function Dashboard() {
       }
 
       if (role === "employee") {
-        const name = localStorage.getItem("name");
-        if(name){
+        const stid = localStorage.getItem("stid");
+        if(stid){
           // Employee task count
-          const taskRes = await getMyTasks(name);
-          if (taskRes?.status === 200) {setMyTaskCount(taskRes.data.totalTasks || 0);  
+          const taskRes = await getMyTasks(stid);
+          if (taskRes?.status === 200) {
+            setMyTaskCount(taskRes.data.totalTasks || 0);  
           }
         }
       }
