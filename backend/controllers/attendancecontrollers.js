@@ -17,7 +17,9 @@ exports.createAttendance = async (req, res) => {
         } 
 
         // Check if attendance already marked for today
-        const checkDate = date || new Date().toISOString().split("T")[0];
+        const localDate = new Date();
+        const defaultDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+        const checkDate = date || defaultDate;
         const existingAttendance = await attendanceModel.findOne({
             $or: [
                 { employeeId: empdata._id },
@@ -34,7 +36,7 @@ exports.createAttendance = async (req, res) => {
         const attendance = new attendanceModel({ 
             ...req.body, 
             employeeName: empdata.name, 
-            employeeId: empdata._id, // ✅ MongoDB _id 
+            employeeId: empdata.empId, // ✅ Use string empId instead of MongoDB _id
             empId: empdata.empId // optional, useful for display 
         }); 
 
@@ -81,8 +83,23 @@ exports.getAllAttendance = async (req, res) => {
             }).sort({ createdAt: -1 }); 
         } 
 
-        console.log("GET Attendance Records:", attendanceRecords); 
-        res.status(200).json(attendanceRecords); 
+        // Map ObjectIds to string empIds for older records
+        const allEmployees = await employeeSchema.find({}, { _id: 1, empId: 1 });
+        const empIdMap = {};
+        allEmployees.forEach(emp => {
+            empIdMap[emp._id.toString()] = emp.empId;
+        });
+
+        const formattedRecords = attendanceRecords.map(record => {
+            const recordObj = record.toObject();
+            if (mongoose.Types.ObjectId.isValid(recordObj.employeeId)) {
+                recordObj.employeeId = empIdMap[recordObj.employeeId] || recordObj.employeeId;
+            }
+            return recordObj;
+        });
+
+        console.log("GET Attendance Records returned", formattedRecords.length); 
+        res.status(200).json(formattedRecords); 
     } 
     catch (error) { 
         console.error("Error fetching attendance:", error); 

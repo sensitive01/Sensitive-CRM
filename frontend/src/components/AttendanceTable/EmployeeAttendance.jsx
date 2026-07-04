@@ -163,7 +163,10 @@ const EmployeeAttendance = () => {
     setIsSubmitting(true);
 
     const currentDate = new Date();
-    const formattedDate = currentDate.toISOString().split("T")[0];
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
     const formattedTime = currentDate.toLocaleTimeString();
 
     const submissionData = {
