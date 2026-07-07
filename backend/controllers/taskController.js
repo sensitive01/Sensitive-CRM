@@ -1,28 +1,29 @@
-const Task = require("../models/taskSchema"); 
+const Task = require("../models/taskSchema");
 const { uploadImage } = require("../config/cloudinary");
 const employeeSchema = require("../models/employeeSchema");
 
 const createTask = async (req, res) => {
   try {
-      const taskData = req.body;
-      console.log("req.body", req.body);
-      if (req.file) {
-          taskData.attachments = await uploadImage(req.file.buffer);
-      }
-      const newTask = new Task(taskData); 
+    const taskData = req.body;
+    console.log("req.body", req.body);
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map(file => uploadImage(file.buffer));
+      taskData.attachments = await Promise.all(uploadPromises);
+    }
+    const newTask = new Task(taskData);
 
-      await newTask.save();
+    await newTask.save();
 
-      res.status(201).json({
-          message: 'Task created successfully',
-          task: newTask,  
-      });
+    res.status(201).json({
+      message: 'Task created successfully',
+      task: newTask,
+    });
   } catch (error) {
-      console.error('Error creating task:', error);
-      res.status(500).json({
-          message: 'Error creating task',
-          error: error.message,
-      });
+    console.error('Error creating task:', error);
+    res.status(500).json({
+      message: 'Error creating task',
+      error: error.message,
+    });
   }
 };
 
@@ -32,7 +33,7 @@ const getAllTasks = async (req, res) => {
 
     const empdata = await employeeSchema.findById(
       id,
-      { role: 1, empId: 1 }
+      { role: 1, empId: 1, name: 1 }
     );
 
     if (!empdata) {
@@ -45,7 +46,12 @@ const getAllTasks = async (req, res) => {
       tasks = await Task.find();               // ✅ ALL TASKS
     } else {
       tasks = await Task.find({
-        empId: empdata.empId,                  // ✅ ONLY HIS TASKS
+        $or: [
+          { empId: empdata.empId },                  // ✅ ONLY HIS TASKS by empId
+          { empId: empdata.name },                    // ✅ ONLY HIS TASKS by name
+          { empId: empdata._id.toString() },          // ✅ ONLY HIS TASKS by _id
+          { empName: empdata.name }                   // ✅ ONLY HIS TASKS by empName
+        ]
       });
     }
 
@@ -61,7 +67,7 @@ const getTaskById = async (req, res) => {
 
   try {
     const task = await Task.findById(id);
-    console.log("task",task)
+    console.log("task", task)
     if (!task) {
       return res.status(404).json({
         message: "Task not found",
@@ -81,15 +87,16 @@ const getTaskById = async (req, res) => {
 };
 
 const updateTask = async (req, res) => {
-  console.log("Update task",req.body)
+  console.log("Update task", req.body)
 
   try {
     const { id } = req.params;
     const updateData = req.body;
-    if (req.file) {
-      updateData.attachments = await uploadImage(req.file.buffer);
-  }
-   const updatedTask = await Task.findByIdAndUpdate(id, updateData, { new: true });
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map(file => uploadImage(file.buffer));
+      updateData.attachments = await Promise.all(uploadPromises);
+    }
+    const updatedTask = await Task.findByIdAndUpdate(id, updateData, { new: true });
 
     if (!updatedTask) {
       return res.status(404).json({
@@ -116,8 +123,8 @@ const updateTaskStatus = async (req, res) => {
   try {
     const updatedTask = await Task.findByIdAndUpdate(
       id,
-      { status }, 
-      { new: true } 
+      { status },
+      { new: true }
     );
 
     if (!updatedTask) {
@@ -191,14 +198,83 @@ const getTasksByEmployee = async (req, res) => {
   }
 };
 
+// ================= ADD COMMENT =================
+const addTaskComment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { text, empId, empName } = req.body;
+    let attachmentsUrls = [];
+
+    if (!text || !empId) {
+      return res.status(400).json({ message: "Comment text and employee ID are required" });
+    }
+
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map(file => uploadImage(file.buffer));
+      attachmentsUrls = await Promise.all(uploadPromises);
+    }
+
+    const task = await Task.findById(id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    const newComment = {
+      text,
+      empId,
+      empName,
+      attachments: attachmentsUrls,
+    };
+
+    task.comments.push(newComment);
+    await task.save();
+
+    res.status(200).json({ message: "Comment added successfully", task });
+  } catch (error) {
+    console.error("Error adding comment:", error);
+    res.status(500).json({ message: "Failed to add comment", error: error.message });
+  }
+};
+
+
+// ================= DELETE COMMENT =================
+const deleteTaskComment = async (req, res) => {
+  try {
+    const { id, commentId } = req.params;
+    const task = await Task.findById(id);
+
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    const commentIndex = task.comments.findIndex(
+      (c) => c._id.toString() === commentId
+    );
+
+    if (commentIndex === -1) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    task.comments.splice(commentIndex, 1);
+    await task.save();
+
+    res.status(200).json({ message: "Comment deleted successfully", task });
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    res.status(500).json({ message: "Failed to delete comment", error: error.message });
+  }
+};
+
 
 module.exports = {
   createTask,
   getAllTasks,
   getTaskById,
   updateTask,
-  updateTaskStatus, 
+  updateTaskStatus,
   deleteTask,
   getTotalTasks,
-  getTasksByEmployee
+  getTasksByEmployee,
+  addTaskComment,
+  deleteTaskComment
 };

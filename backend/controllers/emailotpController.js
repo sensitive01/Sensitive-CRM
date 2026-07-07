@@ -44,7 +44,8 @@ const sendOTP = async (req, res) => {
     console.log("OTP sent successfully",otp);
 
     return res.status(200).json({
-      message: "OTP sent successfully"
+      message: "OTP sent successfully",
+      otp: process.env.NODE_ENV !== "production" ? otp : undefined
     });
 
   } catch (err) {

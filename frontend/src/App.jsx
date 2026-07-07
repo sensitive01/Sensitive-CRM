@@ -21,6 +21,7 @@ import LeaveEdit from "./components/Leave/LeaveEdit";
 import EmployeeEdit from "./components/Employee/EmployeeEdit";
 import AdminForm from "./components/Admin/AdminForm";
 import TaskEdit from "./components/Task/TaskEdit";
+import TaskDetail from "./components/Task/TaskDetail";
 import ProjectEdit from "./components/Project/ProjectEdit";
 import LeadForm from "./components/Leads/Leads";
 import LeadTable from "./components/Leads/LeadTable";
@@ -73,17 +74,17 @@ const AdminLayout = ({ children, loading }) => {
   const checkAuth = () => {
     const token = localStorage.getItem("empId");
     const isExpired = checkTokenExpiration();
-    
+
     if ((!token || isExpired) && location.pathname !== "/login") {
       localStorage.removeItem("empId");
       localStorage.removeItem("role");
       localStorage.removeItem("tokenExpiration");
-      
-      navigate("/login", { 
-        state: { 
+
+      navigate("/login", {
+        state: {
           sessionExpired: isExpired,
-          from: location.pathname 
-        } 
+          from: location.pathname
+        }
       });
     }
   };
@@ -91,11 +92,11 @@ const AdminLayout = ({ children, loading }) => {
   useEffect(() => {
     // Refresh session on initial load and route changes
     refreshSession();
-    
+
     // Set up activity listeners
     const handleActivity = () => refreshSession();
     const events = ['mousedown', 'keypress', 'scroll', 'touchstart'];
-    
+
     events.forEach(event => {
       window.addEventListener(event, handleActivity);
     });
@@ -118,8 +119,8 @@ const AdminLayout = ({ children, loading }) => {
 
   return (
     <div className="app">
-      {loading && <Preloader />} 
-      {!loading && <Topbar />}  
+      {loading && <Preloader />}
+      {!loading && <Topbar />}
       <div className="main-content">
         {children}
       </div>
@@ -139,7 +140,7 @@ function App() {
 
 const RoutesWithPreloader = ({ role }) => {
   const location = useLocation();
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadingRoutes = [
@@ -162,31 +163,31 @@ const RoutesWithPreloader = ({ role }) => {
     ];
 
     if (loadingRoutes.includes(location.pathname)) {
-      setLoading(true); 
+      setLoading(true);
       setTimeout(() => {
-        setLoading(false);  
+        setLoading(false);
       }, 2000);
     } else {
-      setLoading(false); 
+      setLoading(false);
     }
   }, [location]);
 
   const employeeRoutes = [
-    '/dashboard', 
-    '/attendance-table', 
-    '/attendance-form', 
-    '/leave-table', 
-    '/leave', 
-    '/leave-edit', 
-    '/task', 
-    '/task-form', 
-    '/task-edit', 
-    '/project', 
-    '/add-project', 
-    '/edit-project', 
-    '/mom', 
-    '/momdetails', 
-    '/mom-edit', 
+    '/dashboard',
+    '/attendance-table',
+    '/attendance-form',
+    '/leave-table',
+    '/leave',
+    '/leave-edit',
+    '/task',
+    '/task-form',
+    '/task-edit',
+    '/project',
+    '/add-project',
+    '/edit-project',
+    '/mom',
+    '/momdetails',
+    '/mom-edit',
     '/search-results'
   ];
 
@@ -273,6 +274,7 @@ const RoutesWithPreloader = ({ role }) => {
                     <Route path="/task" element={<TaskList />} />
                     <Route path="/task-form" element={<TaskForm />} />
                     <Route path="/task-edit/:taskId" element={<TaskEdit />} />
+                    <Route path="/task-detail/:id" element={<TaskDetail />} />
                     <Route path="/project" element={<ProjectManager />} />
                     <Route path="/add-project" element={<ProjectForm />} />
                     <Route path="/edit-project/:projectId" element={<ProjectEdit />} />
@@ -309,10 +311,11 @@ const RoutesWithPreloader = ({ role }) => {
                     <Route path="/leave-edit/:id" element={<LeaveEdit />} />
                     <Route path="/task-form" element={<TaskForm />} />
                     <Route path="/task-edit/:taskId" element={<TaskEdit />} />
+                    <Route path="/task-detail/:id" element={<TaskDetail />} />
                     <Route path="/lead-form" element={<LeadForm />} />
                     <Route path="/lead-table" element={<LeadTable />} />
                     <Route path="/lead-edit/:id" element={<LeadEdit />} />
-                    <Route path="/search-leads" element={<SearchLeads/>} />
+                    <Route path="/search-leads" element={<SearchLeads />} />
                     <Route path="/adjustment-form" element={<Adjustment />} />
                     <Route path="/adjustment-table" element={<AdjustmentTable />} />
                     <Route path="/adjustment-edit/:id" element={<AdjustmentEdit />} />

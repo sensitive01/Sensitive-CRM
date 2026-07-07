@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useState, useEffect } from "react";
 import { createTask, employeename, projectname } from "../../api/services/projectServices";
 import { useNavigate } from "react-router-dom";
+import { Loader2, CheckCircle2 } from "lucide-react";
 
 function TaskForm() {
   const [tasks, setTasks] = useState([
@@ -9,6 +10,7 @@ function TaskForm() {
       project: "",
       task: "",
       empId: "",
+      empName: "",
       description: "",
       timeline: "",
       status: "Pending",
@@ -22,8 +24,10 @@ function TaskForm() {
   const [role, setRole] = useState(localStorage.getItem("role") || "Superadmin");
   const [projects, setprojects] = useState([]);
   const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,6 +73,10 @@ function TaskForm() {
     setTasks((prev) => {
       const updatedTasks = [...prev];
       updatedTasks[index][name] = value;
+      if (name === "empId") {
+        const selectedEmp = employees.find(emp => (emp.empId || emp._id) === value);
+        updatedTasks[index].empName = selectedEmp ? selectedEmp.name : "";
+      }
       return updatedTasks;
     });
   };
@@ -89,6 +97,7 @@ function TaskForm() {
         project: "",
         task: "",
         empId: "",
+        empName: "",
         description: "",
         timeline: "",
         status: "Pending",
@@ -104,6 +113,8 @@ function TaskForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
+    let allSuccess = true;
 
     try {
       for (const formTask of tasks) {
@@ -111,6 +122,7 @@ function TaskForm() {
         formData.append("project", formTask.project);
         formData.append("task", formTask.task);
         formData.append("empId", formTask.empId);
+        if (formTask.empName) formData.append("empName", formTask.empName);
         formData.append("description", formTask.description);
         formData.append("timeline", formTask.timeline);
         formData.append("status", formTask.status);
@@ -125,16 +137,24 @@ function TaskForm() {
 
         const response = await createTask(formData);
 
-        if (response.status === 201) {
-          alert("Task created successfully!");
-          navigate("/task");
-        } else {
-          alert("Failed to create task.");
+        if (response.status !== 201) {
+          allSuccess = false;
         }
+      }
+
+      if (allSuccess) {
+        setShowSuccessModal(true);
+        setTimeout(() => {
+          navigate("/task");
+        }, 1500);
+      } else {
+        alert("Some tasks failed to create.");
       }
     } catch (error) {
       console.error("Error:", error);
       alert("An error occurred while creating the tasks.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -212,7 +232,7 @@ function TaskForm() {
                 >
                   <option value="">Select Employee</option>
                   {employees.map((employee) => (
-                    <option key={employee.id} value={employee.id}>
+                    <option key={employee._id || employee.id} value={employee.empId || employee._id}>
                       {employee.name}
                     </option>
                   ))}
@@ -302,10 +322,11 @@ function TaskForm() {
         <div className="flex justify-center gap-6 pt-6">
           <button
             type="submit"
-            className="px-10 py-3 bg-blue-600 text-white rounded-xl font-semibold
-                       hover:bg-blue-700 transition shadow-lg"
+            disabled={submitting}
+            className="flex items-center px-10 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition shadow-lg disabled:opacity-70"
           >
-            Submit
+            {submitting && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
+            {submitting ? "Submitting..." : "Submit"}
           </button>
 
           <button
@@ -319,6 +340,21 @@ function TaskForm() {
         </div>
       </form>
     </div>
+    
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-sm relative animate-in zoom-in-95 duration-200 p-8 text-center">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+              <CheckCircle2 className="w-10 h-10 text-green-500" />
+            </div>
+            <h3 className="text-2xl font-extrabold text-slate-800 mb-2">Success!</h3>
+            <p className="text-slate-500">
+              Task created successfully. Redirecting...
+            </p>
+          </div>
+        </div>
+      )}
    </div>
   );
 }
