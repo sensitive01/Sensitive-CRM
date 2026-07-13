@@ -25,15 +25,23 @@ const TaskDetail = () => {
   const projectTasks = allTasks.filter(t => t.project === selectedProject);
 
   const projectAssignees = [...new Set(projectTasks.map(t => t.empName || t.empId).filter(Boolean))];
-  
+
   let allDocuments = [];
   if (task && task.attachments) {
-    allDocuments.push(...(Array.isArray(task.attachments) ? task.attachments : [task.attachments]));
+    const taskAttachments = Array.isArray(task.attachments) ? task.attachments : [task.attachments];
+    allDocuments.push(...taskAttachments.map(url => ({
+      url,
+      sender: task.empName || task.empId || "Task Creator"
+    })));
   }
   if (task && task.comments) {
     task.comments.forEach(c => {
       if (c.attachments || c.attachment) {
-        allDocuments.push(...(Array.isArray(c.attachments) ? c.attachments : [c.attachments || c.attachment]));
+        const commentAttachments = Array.isArray(c.attachments) ? c.attachments : [c.attachments || c.attachment];
+        allDocuments.push(...commentAttachments.map(url => ({
+          url,
+          sender: c.empName || c.empId || "Commenter"
+        })));
       }
     });
   }
@@ -108,7 +116,8 @@ const TaskDetail = () => {
       }
     } catch (error) {
       console.error("Error adding comment:", error);
-      alert("Failed to add comment.");
+      const errorMsg = error.response?.data?.message || error.message || "Unknown error";
+      alert(`Failed to add comment. Server says: ${errorMsg}`);
     } finally {
       setSubmitting(false);
     }
@@ -129,10 +138,35 @@ const TaskDetail = () => {
     }
   };
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+  const filterValidFiles = (newFiles) => {
+    const dt = new DataTransfer();
+    let hasOversized = false;
+
+    if (attachment && attachment.length > 0) {
+      Array.from(attachment).forEach(f => dt.items.add(f));
+    }
+
+    Array.from(newFiles).forEach(file => {
+      if (file.size > MAX_FILE_SIZE) {
+        hasOversized = true;
+      } else {
+        dt.items.add(file);
+      }
+    });
+
+    if (hasOversized) {
+      alert("One or more files exceed the safe 10MB limit and were skipped.");
+    }
+
+    return dt.files.length > 0 ? dt.files : null;
+  };
+
   const handlePaste = (e) => {
     if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
-      e.preventDefault(); 
-      setAttachment(e.clipboardData.files);
+      e.preventDefault();
+      setAttachment(filterValidFiles(e.clipboardData.files));
     }
   };
 
@@ -141,24 +175,51 @@ const TaskDetail = () => {
     return url.match(/\.(jpeg|jpg|gif|png|webp|svg|bmp)(\?.*)?$/i) != null;
   };
 
+  const isVideoUrl = (url) => {
+    if (!url) return false;
+    return url.match(/\.(mp4|webm|ogg|mov|avi|wmv)(\?.*)?$/i) != null;
+  };
+
+  const isRenderableAsImage = (url) => {
+    if (!url) return false;
+    if (isImageUrl(url)) return true;
+    if (url.includes('cloudinary.com') && url.toLowerCase().match(/\.(pdf|mp4|webm|ogg|mov|avi|wmv)$/i)) return true;
+    return false;
+  };
+
+  const getRenderableImageUrl = (url) => {
+    if (!url) return url;
+    if (url.includes('cloudinary.com') && url.toLowerCase().match(/\.(pdf|mp4|webm|ogg|mov|avi|wmv)$/i)) {
+      return url.replace(/\.(pdf|mp4|webm|ogg|mov|avi|wmv)$/i, '.jpg');
+    }
+    return url;
+  };
+
   const renderAttachmentPreview = (url, label, small = false) => {
-    if (isImageUrl(url)) {
+    if (isRenderableAsImage(url)) {
       return (
-        <div 
+        <div
           onClick={() => setPreviewUrl(url)}
           className={`relative group cursor-pointer rounded-xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-slate-100 ${small ? 'w-20 h-20' : 'w-32 h-32'}`}
           title={label}
         >
-          <img src={url} alt={label} className="w-full h-full object-cover" />
+          <img src={getRenderableImageUrl(url)} alt={label} className="w-full h-full object-cover" />
+          {isVideoUrl(url) && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+              <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform backdrop-blur-sm">
+                <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-slate-800 border-b-[5px] border-b-transparent ml-0.5"></div>
+              </div>
+            </div>
+          )}
           <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/20 transition-colors flex items-center justify-center">
             <ExternalLink className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
           </div>
         </div>
       );
     }
-    
+
     return (
-      <button 
+      <button
         onClick={() => setPreviewUrl(url)}
         className={`inline-flex items-center justify-center font-medium text-indigo-700 bg-white rounded-xl shadow-sm border border-indigo-200 hover:border-indigo-300 hover:shadow-md transition-all hover:-translate-y-0.5 ${small ? 'text-xs px-3 py-2 flex-col gap-1 w-20 h-20' : 'text-sm px-5 py-2.5'}`}
         title={label}
@@ -188,7 +249,7 @@ const TaskDetail = () => {
         <div className="p-5 border-b border-slate-100 relative">
           <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Project</h3>
           <div className="relative">
-            <button 
+            <button
               onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
               className="flex items-center gap-3 w-full hover:bg-slate-50 p-2 -mx-2 rounded-lg transition-colors text-left"
             >
@@ -200,7 +261,7 @@ const TaskDetail = () => {
               </div>
               <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
-            
+
             {isProjectDropdownOpen && (
               <div className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-2 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
                 {uniqueProjects.map(proj => (
@@ -219,7 +280,7 @@ const TaskDetail = () => {
             )}
           </div>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-3">
           <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2 mt-2">Tasks</div>
           {projectTasks.length > 0 ? (
@@ -228,18 +289,16 @@ const TaskDetail = () => {
                 <button
                   key={t._id}
                   onClick={() => navigate(`/task-detail/${t._id}`)}
-                  className={`w-full flex flex-col items-start text-left py-2 px-3 rounded-md transition-colors ${
-                    t._id === task._id 
-                      ? "bg-indigo-50/80 text-indigo-700 font-semibold" 
+                  className={`w-full flex flex-col items-start text-left py-2 px-3 rounded-md transition-colors ${t._id === task._id
+                      ? "bg-indigo-50/80 text-indigo-700 font-semibold"
                       : "text-slate-600 hover:bg-slate-200/50 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   <div className="truncate text-sm w-full">{t.task}</div>
-                  <div className={`text-[10px] mt-0.5 uppercase tracking-wider font-bold ${
-                    t.status === 'Completed' ? 'text-emerald-500' :
-                    t.status === 'In Progress' ? 'text-blue-500' :
-                    'text-amber-500'
-                  }`}>
+                  <div className={`text-[10px] mt-0.5 uppercase tracking-wider font-bold ${t.status === 'Completed' ? 'text-emerald-500' :
+                      t.status === 'In Progress' ? 'text-blue-500' :
+                        'text-amber-500'
+                    }`}>
                     {t.status || "Pending"}
                   </div>
                 </button>
@@ -256,11 +315,11 @@ const TaskDetail = () => {
         <div className="max-w-6xl mx-auto">
           {/* Header / Back Navigation */}
           <div className="mb-6">
-            <button 
+            <button
               onClick={() => navigate(-1)}
               className="group flex items-center text-slate-500 hover:text-indigo-600 transition-colors font-medium text-sm bg-white/50 px-4 py-2 rounded-full shadow-sm hover:shadow border border-slate-200/60 w-fit backdrop-blur-sm"
             >
-              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" /> 
+              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
               Back to Task Board
             </button>
           </div>
@@ -268,316 +327,321 @@ const TaskDetail = () => {
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Middle Column: Details & Comments */}
             <div className="lg:w-2/3 space-y-8">
-            {/* Task Info Card */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-6 leading-tight tracking-tight">
-                {task.task}
-              </h1>
-              
-              <div className="prose max-w-none">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center mb-3">
-                  <Info className="w-4 h-4 mr-2" /> Description
-                </h3>
-                <div className="bg-slate-50/80 backdrop-blur-sm p-6 rounded-2xl border border-slate-100 text-slate-600 leading-relaxed min-h-[100px]">
-                  {task.description ? (
-                    <p className="whitespace-pre-wrap m-0">{task.description}</p>
+              {/* Task Info Card */}
+              <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-6 leading-tight tracking-tight">
+                  {task.task}
+                </h1>
+
+                <div className="prose max-w-none">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center mb-3">
+                    <Info className="w-4 h-4 mr-2" /> Description
+                  </h3>
+                  <div className="bg-slate-50/80 backdrop-blur-sm p-6 rounded-2xl border border-slate-100 text-slate-600 leading-relaxed min-h-[100px]">
+                    {task.description ? (
+                      <p className="whitespace-pre-wrap m-0">{task.description}</p>
+                    ) : (
+                      <p className="italic text-slate-400 m-0">No description provided for this task.</p>
+                    )}
+                  </div>
+                </div>
+
+                {task.attachments && (Array.isArray(task.attachments) ? task.attachments : [task.attachments]).length > 0 && (
+                  <div className="mt-8 p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex flex-col gap-4">
+                    <div>
+                      <h3 className="text-sm font-bold text-indigo-900 mb-1">Attached Resources</h3>
+                      <p className="text-xs text-indigo-600/70">Files attached to the main task description.</p>
+                    </div>
+                    <div className="flex flex-wrap gap-4">
+                      {(Array.isArray(task.attachments) ? task.attachments : [task.attachments]).map((url, idx) => (
+                        <React.Fragment key={idx}>
+                          {renderAttachmentPreview(url, `Attachment ${idx + 1}`)}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Comments Section */}
+              <div className="mt-8">
+                <h3 className="text-lg font-bold text-slate-800 mb-6">Activity</h3>
+
+                {/* Add Comment Form */}
+                <div className="flex gap-4 mb-8">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-400 font-bold border border-slate-200">
+                    <User className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <form onSubmit={submitComment} className="relative">
+                      <textarea
+                        className="w-full p-3 border border-slate-300 rounded-md text-slate-700 text-sm outline-none resize-y min-h-[50px] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-slate-400"
+                        placeholder="Add a comment... (paste files here too)"
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        onPaste={handlePaste}
+                      />
+
+                      {attachment && attachment.length > 0 && (
+                        <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-col gap-2">
+                          <div className="flex items-center justify-between text-xs font-semibold text-slate-600 mb-1">
+                            <span className="flex items-center gap-1.5"><Paperclip className="w-3.5 h-3.5" /> Attached {attachment.length} file(s)</span>
+                            <button type="button" onClick={() => { setAttachment(null); document.getElementById("attachment-input").value = ""; }} className="text-red-500 hover:text-red-700 hover:underline">Remove All</button>
+                          </div>
+                          <div className="flex flex-wrap gap-3">
+                            {Array.from(attachment).map((file, idx) => {
+                              const isImg = file.type.startsWith('image/');
+                              const isVid = file.type.startsWith('video/');
+                              const isPdf = file.type === 'application/pdf';
+                              const url = URL.createObjectURL(file);
+                              return (
+                                <div key={idx} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-slate-200 shadow-sm bg-white flex items-center justify-center">
+                                  {isImg ? (
+                                    <img src={url} alt="preview" className="w-full h-full object-cover" />
+                                  ) : isVid ? (
+                                    <video src={url} className="w-full h-full object-cover bg-black" />
+                                  ) : (
+                                    <div className="text-[10px] text-slate-400 font-medium text-center px-1 break-all flex flex-col items-center">
+                                      <FileText className="w-5 h-5 mx-auto mb-1 text-slate-300" />
+                                      {isPdf ? 'PDF' : file.name.substring(0, 10) + '...'}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between mt-2">
+                        <div />
+                        <div className="flex items-center gap-3">
+                          <label className="cursor-pointer flex items-center justify-center p-1 text-slate-400 hover:text-slate-700 transition-all" title="Attach file">
+                            <Paperclip className="w-4 h-4" />
+                            <input
+                              type="file"
+                              multiple
+                              accept="image/*,video/*,application/pdf"
+                              id="attachment-input"
+                              className="hidden"
+                              onChange={(e) => {
+                                setAttachment(filterValidFiles(e.target.files));
+                              }}
+                            />
+                          </label>
+                          <button
+                            type="submit"
+                            disabled={submitting || (!commentText.trim() && (!attachment || attachment.length === 0))}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-4 py-1.5 rounded border border-blue-700 disabled:opacity-50 disabled:bg-blue-400 disabled:border-blue-400 transition-colors"
+                          >
+                            {submitting ? "Saving..." : "Save"}
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                <div className="space-y-8">
+                  {task.comments && task.comments.length > 0 ? (
+                    task.comments.map((comment, idx) => {
+                      const isMyComment = empId === comment.empId;
+                      return (
+                        <div key={idx} className="flex gap-4 group">
+                          <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center border border-transparent ${isMyComment ? 'bg-indigo-100 text-indigo-500 border-indigo-200' : 'bg-emerald-100 text-emerald-500 border-emerald-200'
+                            }`}>
+                            <User className="w-5 h-5" />
+                          </div>
+
+                          <div className="flex-1 text-sm text-slate-800">
+                            <div className="flex items-baseline gap-2 mb-1">
+                              <span className="font-semibold text-slate-900">
+                                {comment.empName || comment.empId}
+                              </span>
+                              <span className="text-slate-500 text-xs">
+                                {new Date(comment.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })} at {new Date(comment.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                              </span>
+                            </div>
+
+                            {comment.text && comment.text.trim() && (
+                              <p className="whitespace-pre-wrap leading-relaxed text-slate-700 mt-1">{comment.text}</p>
+                            )}
+
+                            {(comment.attachments || comment.attachment) && (
+                              <div className="mt-3 flex flex-wrap gap-3">
+                                {(Array.isArray(comment.attachments) ? comment.attachments : (comment.attachments ? [comment.attachments] : [comment.attachment])).map((url, attachIdx) => (
+                                  <React.Fragment key={attachIdx}>
+                                    {renderAttachmentPreview(url, `File ${attachIdx + 1}`, true)}
+                                  </React.Fragment>
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="mt-3 flex items-center gap-3 text-xs text-slate-500 font-medium">
+                              {(role === "Superadmin" || isMyComment) ? (
+                                <button
+                                  onClick={() => setCommentToDelete(comment._id)}
+                                  className="hover:underline hover:text-red-600 transition-colors text-slate-500"
+                                >
+                                  Delete
+                                </button>
+                              ) : (
+                                <button className="hover:underline hover:text-slate-700 transition-colors text-slate-500">Delete</button>
+                              )}
+                              <span className="px-1 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
                   ) : (
-                    <p className="italic text-slate-400 m-0">No description provided for this task.</p>
+                    <div className="text-slate-500 text-sm ml-14">No comments yet.</div>
                   )}
                 </div>
               </div>
-
-              {task.attachments && (Array.isArray(task.attachments) ? task.attachments : [task.attachments]).length > 0 && (
-                <div className="mt-8 p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex flex-col gap-4">
-                  <div>
-                    <h3 className="text-sm font-bold text-indigo-900 mb-1">Attached Resources</h3>
-                    <p className="text-xs text-indigo-600/70">Files attached to the main task description.</p>
-                  </div>
-                  <div className="flex flex-wrap gap-4">
-                    {(Array.isArray(task.attachments) ? task.attachments : [task.attachments]).map((url, idx) => (
-                      <React.Fragment key={idx}>
-                        {renderAttachmentPreview(url, `Attachment ${idx + 1}`)}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* Comments Section */}
-            <div className="mt-8">
-              <h3 className="text-lg font-bold text-slate-800 mb-6">Activity</h3>
-              
-              {/* Add Comment Form */}
-              <div className="flex gap-4 mb-8">
-                <div className="w-10 h-10 rounded-full bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-400 font-bold border border-slate-200">
-                  <User className="w-5 h-5" />
+            {/* Right Column: Meta Info Sidebar */}
+            <div className="lg:w-1/3">
+              <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sticky top-24 z-10">
+                <div className="flex border-b border-slate-200 mb-6 relative">
+                  <button
+                    onClick={() => setRightSidebarTab("Details")}
+                    className={`flex-1 pb-3 text-sm font-bold transition-colors ${rightSidebarTab === "Details" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
+                  >
+                    Details
+                  </button>
+                  <button
+                    onClick={() => setRightSidebarTab("Documents")}
+                    className={`flex-1 pb-3 text-sm font-bold transition-colors ${rightSidebarTab === "Documents" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
+                  >
+                    Documents
+                  </button>
                 </div>
-                <div className="flex-1">
-                  <form onSubmit={submitComment} className="relative">
-                    <textarea
-                      className="w-full p-3 border border-slate-300 rounded-md text-slate-700 text-sm outline-none resize-y min-h-[50px] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-slate-400"
-                      placeholder="Add a comment... (paste files here too)"
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      onPaste={handlePaste}
-                    />
-                    
-                    {attachment && attachment.length > 0 && (
-                      <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-col gap-2">
-                        <div className="flex items-center justify-between text-xs font-semibold text-slate-600 mb-1">
-                          <span className="flex items-center gap-1.5"><Paperclip className="w-3.5 h-3.5" /> Attached {attachment.length} file(s)</span>
-                          <button type="button" onClick={() => { setAttachment(null); document.getElementById("attachment-input").value = ""; }} className="text-red-500 hover:text-red-700 hover:underline">Remove All</button>
+
+                {rightSidebarTab === "Details" ? (
+                  <div className="space-y-7 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">Current Status</label>
+                      <select
+                        value={task.status || "Pending"}
+                        onChange={handleStatusChange}
+                        className={`w-full p-3 rounded-xl border-2 font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer appearance-none ${task.status?.toLowerCase() === 'completed' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                            task.status?.toLowerCase() === 'in progress' ? 'bg-blue-50 border-blue-200 text-blue-700' :
+                              'bg-orange-50 border-orange-200 text-orange-700'
+                          }`}
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-5 px-1">
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0 border border-slate-100">
+                          <User className="w-5 h-5 text-slate-400" />
                         </div>
-                        <div className="flex flex-wrap gap-3">
-                          {Array.from(attachment).map((file, idx) => {
-                            const isImg = file.type.startsWith('image/');
-                            const url = URL.createObjectURL(file);
-                            return (
-                              <div key={idx} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-slate-200 shadow-sm bg-white flex items-center justify-center">
-                                {isImg ? (
-                                  <img src={url} alt="preview" className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className="text-[10px] text-slate-400 font-medium text-center px-1 break-all">
-                                    <FileText className="w-5 h-5 mx-auto mb-1 text-slate-300" />
-                                    {file.name.substring(0, 10)}...
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Assignee</label>
+                          <span className="text-slate-800 font-bold text-sm">{task.empName || task.empId || "Unassigned"}</span>
                         </div>
                       </div>
-                    )}
 
-                    <div className="flex justify-between mt-2">
-                      <div />
-                      <div className="flex items-center gap-3">
-                        <label className="cursor-pointer flex items-center justify-center p-1 text-slate-400 hover:text-slate-700 transition-all" title="Attach file">
-                          <Paperclip className="w-4 h-4" />
-                          <input 
-                            type="file" 
-                            multiple
-                            id="attachment-input"
-                            className="hidden" 
-                            onChange={(e) => {
-                              // Append new files to existing attachment if present
-                              if (attachment && attachment.length > 0) {
-                                const dt = new DataTransfer();
-                                Array.from(attachment).forEach(f => dt.items.add(f));
-                                Array.from(e.target.files).forEach(f => dt.items.add(f));
-                                setAttachment(dt.files);
-                              } else {
-                                setAttachment(e.target.files);
-                              }
-                            }}
-                          />
-                        </label>
-                        <button 
-                          type="submit" 
-                          disabled={submitting || (!commentText.trim() && (!attachment || attachment.length === 0))}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-4 py-1.5 rounded border border-blue-700 disabled:opacity-50 disabled:bg-blue-400 disabled:border-blue-400 transition-colors"
-                        >
-                          {submitting ? "Saving..." : "Save"}
-                        </button>
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0 border border-slate-100">
+                          <Briefcase className="w-5 h-5 text-slate-400" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Project</label>
+                          <span className="text-slate-800 font-bold text-sm">{task.project || "None"}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0 border border-slate-100">
+                          <Clock className="w-5 h-5 text-slate-400" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Timeline</label>
+                          <span className="text-slate-800 font-bold text-sm">{task.timeline || "Not set"}</span>
+                        </div>
                       </div>
                     </div>
-                  </form>
-                </div>
-              </div>
-              
-              <div className="space-y-8">
-                {task.comments && task.comments.length > 0 ? (
-                  task.comments.map((comment, idx) => {
-                    const isMyComment = empId === comment.empId;
-                    return (
-                      <div key={idx} className="flex gap-4 group">
-                        <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center border border-transparent ${
-                          isMyComment ? 'bg-indigo-100 text-indigo-500 border-indigo-200' : 'bg-emerald-100 text-emerald-500 border-emerald-200'
-                        }`}>
-                          <User className="w-5 h-5" />
-                        </div>
-                        
-                        <div className="flex-1 text-sm text-slate-800">
-                          <div className="flex items-baseline gap-2 mb-1">
-                            <span className="font-semibold text-slate-900">
-                              {comment.empName || comment.empId}
-                            </span>
-                            <span className="text-slate-500 text-xs">
-                              {new Date(comment.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })} at {new Date(comment.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          
-                          {comment.text && comment.text.trim() && (
-                            <p className="whitespace-pre-wrap leading-relaxed text-slate-700 mt-1">{comment.text}</p>
-                          )}
-                          
-                          {(comment.attachments || comment.attachment) && (
-                            <div className="mt-3 flex flex-wrap gap-3">
-                              {(Array.isArray(comment.attachments) ? comment.attachments : (comment.attachments ? [comment.attachments] : [comment.attachment])).map((url, attachIdx) => (
-                                <React.Fragment key={attachIdx}>
-                                  {renderAttachmentPreview(url, `File ${attachIdx + 1}`, true)}
-                                </React.Fragment>
-                              ))}
-                            </div>
-                          )}
 
-                          <div className="mt-3 flex items-center gap-3 text-xs text-slate-500 font-medium">
-                            {(role === "Superadmin" || isMyComment) ? (
-                               <button 
-                                 onClick={() => setCommentToDelete(comment._id)}
-                                 className="hover:underline hover:text-red-600 transition-colors text-slate-500"
-                               >
-                                 Delete
-                               </button>
-                            ) : (
-                               <button className="hover:underline hover:text-slate-700 transition-colors text-slate-500">Delete</button>
-                            )}
-                            <span className="px-1 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
-                            </span>
+                    <div className="mt-8 pt-6 border-t border-slate-100">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Project Assignees</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {projectAssignees.length > 0 ? projectAssignees.map((assignee, idx) => (
+                          <div key={idx} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5 shadow-sm">
+                            <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold">
+                              {assignee.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-xs font-semibold text-slate-700">{assignee}</span>
                           </div>
-                        </div>
+                        )) : (
+                          <span className="text-xs text-slate-400">No assignees found.</span>
+                        )}
                       </div>
-                    );
-                  })
+                    </div>
+                  </div>
                 ) : (
-                  <div className="text-slate-500 text-sm ml-14">No comments yet.</div>
+                  <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300 max-h-[60vh] overflow-y-auto pr-2">
+                    {allDocuments.length > 0 ? allDocuments.map((doc, idx) => (
+                      <div key={idx} className="flex flex-col p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-sm transition-all group">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                              <FileText className="w-4 h-4" />
+                            </div>
+                            <div className="flex flex-col truncate pr-2">
+                              <span className="text-xs font-medium text-slate-700 truncate">Document {idx + 1}</span>
+                              <span className="text-[10px] text-slate-400 truncate">by {doc.sender}</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setPreviewUrl(doc.url)}
+                            className="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-all shrink-0"
+                          >
+                            View
+                          </button>
+                        </div>
+                        {isRenderableAsImage(doc.url) && (
+                          <div
+                            className="w-full h-32 rounded-lg overflow-hidden border border-slate-200 cursor-pointer relative mt-3 group"
+                            onClick={() => setPreviewUrl(doc.url)}
+                          >
+                            <img src={getRenderableImageUrl(doc.url)} alt={`Document ${idx + 1}`} className="w-full h-full object-cover" />
+                            {isVideoUrl(doc.url) && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                                <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform backdrop-blur-sm">
+                                  <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-slate-800 border-b-[5px] border-b-transparent ml-0.5"></div>
+                                </div>
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-slate-900/0 hover:bg-slate-900/20 transition-colors flex items-center justify-center">
+                              <ExternalLink className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )) : (
+                      <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <Paperclip className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+                        <p className="text-slate-500 text-sm font-medium">No documents attached</p>
+                        <p className="text-slate-400 text-xs mt-1">Attachments will appear here</p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
           </div>
-
-          {/* Right Column: Meta Info Sidebar */}
-          <div className="lg:w-1/3">
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sticky top-24 z-10">
-              <div className="flex border-b border-slate-200 mb-6 relative">
-                <button 
-                  onClick={() => setRightSidebarTab("Details")} 
-                  className={`flex-1 pb-3 text-sm font-bold transition-colors ${rightSidebarTab === "Details" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
-                >
-                  Details
-                </button>
-                <button 
-                  onClick={() => setRightSidebarTab("Documents")} 
-                  className={`flex-1 pb-3 text-sm font-bold transition-colors ${rightSidebarTab === "Documents" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
-                >
-                  Documents
-                </button>
-              </div>
-              
-              {rightSidebarTab === "Details" ? (
-                <div className="space-y-7 animate-in fade-in slide-in-from-right-4 duration-300">
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">Current Status</label>
-                    <select
-                      value={task.status || "Pending"}
-                      onChange={handleStatusChange}
-                      className={`w-full p-3 rounded-xl border-2 font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer appearance-none ${
-                        task.status?.toLowerCase() === 'completed' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                        task.status?.toLowerCase() === 'in progress' ? 'bg-blue-50 border-blue-200 text-blue-700' :
-                        'bg-orange-50 border-orange-200 text-orange-700'
-                      }`}
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Completed">Completed</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-5 px-1">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0 border border-slate-100">
-                        <User className="w-5 h-5 text-slate-400" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Assignee</label>
-                        <span className="text-slate-800 font-bold text-sm">{task.empName || task.empId || "Unassigned"}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0 border border-slate-100">
-                        <Briefcase className="w-5 h-5 text-slate-400" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Project</label>
-                        <span className="text-slate-800 font-bold text-sm">{task.project || "None"}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0 border border-slate-100">
-                        <Clock className="w-5 h-5 text-slate-400" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Timeline</label>
-                        <span className="text-slate-800 font-bold text-sm">{task.timeline || "Not set"}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-8 pt-6 border-t border-slate-100">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Project Assignees</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {projectAssignees.length > 0 ? projectAssignees.map((assignee, idx) => (
-                        <div key={idx} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5 shadow-sm">
-                           <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold">
-                             {assignee.charAt(0).toUpperCase()}
-                           </div>
-                           <span className="text-xs font-semibold text-slate-700">{assignee}</span>
-                        </div>
-                      )) : (
-                        <span className="text-xs text-slate-400">No assignees found.</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300 max-h-[60vh] overflow-y-auto pr-2">
-                  {allDocuments.length > 0 ? allDocuments.map((doc, idx) => (
-                    <div key={idx} className="flex flex-col p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-sm transition-all group">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                            <FileText className="w-4 h-4" />
-                          </div>
-                          <div className="truncate pr-2 text-xs font-medium text-slate-700">Document {idx + 1}</div>
-                        </div>
-                        <button 
-                          onClick={() => setPreviewUrl(doc)}
-                          className="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-all shrink-0"
-                        >
-                          View
-                        </button>
-                      </div>
-                      {isImageUrl(doc) && (
-                        <div 
-                          className="w-full h-32 rounded-lg overflow-hidden border border-slate-200 cursor-pointer relative"
-                          onClick={() => setPreviewUrl(doc)}
-                        >
-                          <img src={doc} alt={`Document ${idx + 1}`} className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-slate-900/0 hover:bg-slate-900/20 transition-colors flex items-center justify-center">
-                            <ExternalLink className="w-6 h-6 text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-md" />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )) : (
-                    <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                      <Paperclip className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-                      <p className="text-slate-500 text-sm font-medium">No documents attached</p>
-                      <p className="text-slate-400 text-xs mt-1">Attachments will appear here</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
-    </div>
 
       {/* File Preview Modal */}
       {previewUrl && (
@@ -595,11 +659,21 @@ const TaskDetail = () => {
               </div>
             </div>
             <div className="flex-1 overflow-auto bg-slate-100/50 p-4 flex justify-center items-center min-h-[50vh]">
-               {isImageUrl(previewUrl) ? (
-                 <img src={previewUrl} className="max-w-full max-h-[70vh] rounded-xl object-contain shadow-sm bg-white" alt="Preview" />
-               ) : (
-                 <iframe src={previewUrl} className="w-full h-[70vh] rounded-xl border border-slate-200 bg-white" title="File Preview" />
-               )}
+              {isVideoUrl(previewUrl) ? (
+                <video
+                  controls
+                  src={previewUrl}
+                  className="max-w-full max-h-[70vh] rounded-xl shadow-sm bg-black"
+                />
+              ) : isRenderableAsImage(previewUrl) ? (
+                <img
+                  src={getRenderableImageUrl(previewUrl)}
+                  className="max-w-full max-h-[70vh] rounded-xl object-contain shadow-sm bg-white"
+                  alt="Preview"
+                />
+              ) : (
+                <iframe src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewUrl)}&embedded=true`} className="w-full h-[70vh] rounded-xl border border-slate-200 bg-white" title="File Preview" />
+              )}
             </div>
           </div>
         </div>
@@ -617,15 +691,15 @@ const TaskDetail = () => {
               <p className="text-slate-500 mb-8 leading-relaxed">
                 Are you sure you want to delete this comment? This action cannot be undone.
               </p>
-              
+
               <div className="flex gap-3 justify-center">
-                <button 
+                <button
                   onClick={() => setCommentToDelete(null)}
                   className="px-6 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors w-full sm:w-auto"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={executeDeleteComment}
                   className="px-6 py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm hover:shadow-md hover:shadow-red-600/20 transition-all w-full sm:w-auto"
                 >
@@ -633,8 +707,8 @@ const TaskDetail = () => {
                 </button>
               </div>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => setCommentToDelete(null)}
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
             >
