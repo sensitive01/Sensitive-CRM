@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ArrowLeft, Paperclip, Send, Clock, User, Briefcase, Info, Loader2, Trash2, X, ExternalLink, AlertTriangle, ChevronDown } from "lucide-react";
+import { ArrowLeft, Paperclip, Send, Clock, User, Briefcase, Info, Loader2, Trash2, X, ExternalLink, AlertTriangle, ChevronDown, FileText } from "lucide-react";
 
 const TaskDetail = () => {
   const { id } = useParams();
@@ -79,11 +79,11 @@ const TaskDetail = () => {
 
   const submitComment = async (e) => {
     e.preventDefault();
-    if (!commentText.trim()) return;
+    if (!commentText.trim() && (!attachment || attachment.length === 0)) return;
 
     setSubmitting(true);
     const formData = new FormData();
-    formData.append("text", commentText);
+    formData.append("text", commentText || " "); // Ensure text is sent if only attaching a file
     formData.append("empId", empId);
     if (empName) {
       formData.append("empName", empName);
@@ -103,7 +103,9 @@ const TaskDetail = () => {
       setTask(res.data.task);
       setCommentText("");
       setAttachment(null);
-      document.getElementById("attachment-input").value = "";
+      if (document.getElementById("attachment-input")) {
+        document.getElementById("attachment-input").value = "";
+      }
     } catch (error) {
       console.error("Error adding comment:", error);
       alert("Failed to add comment.");
@@ -129,18 +131,42 @@ const TaskDetail = () => {
 
   const handlePaste = (e) => {
     if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
-      // Prevent default to avoid pasting the file name or binary text into textarea if applicable
       e.preventDefault(); 
       setAttachment(e.clipboardData.files);
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case "completed": return "bg-green-100 text-green-800 border-green-200";
-      case "in progress": return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
+  const isImageUrl = (url) => {
+    if (!url) return false;
+    return url.match(/\.(jpeg|jpg|gif|png|webp|svg|bmp)(\?.*)?$/i) != null;
+  };
+
+  const renderAttachmentPreview = (url, label, small = false) => {
+    if (isImageUrl(url)) {
+      return (
+        <div 
+          onClick={() => setPreviewUrl(url)}
+          className={`relative group cursor-pointer rounded-xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-slate-100 ${small ? 'w-20 h-20' : 'w-32 h-32'}`}
+          title={label}
+        >
+          <img src={url} alt={label} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/20 transition-colors flex items-center justify-center">
+            <ExternalLink className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+          </div>
+        </div>
+      );
     }
+    
+    return (
+      <button 
+        onClick={() => setPreviewUrl(url)}
+        className={`inline-flex items-center justify-center font-medium text-indigo-700 bg-white rounded-xl shadow-sm border border-indigo-200 hover:border-indigo-300 hover:shadow-md transition-all hover:-translate-y-0.5 ${small ? 'text-xs px-3 py-2 flex-col gap-1 w-20 h-20' : 'text-sm px-5 py-2.5'}`}
+        title={label}
+      >
+        <FileText className={`${small ? 'w-6 h-6 text-indigo-400' : 'w-4 h-4 mr-2'}`} />
+        <span className={small ? 'text-[10px] truncate w-full text-center' : ''}>{small ? 'File' : label}</span>
+      </button>
+    );
   };
 
   if (loading) return (
@@ -268,15 +294,11 @@ const TaskDetail = () => {
                     <h3 className="text-sm font-bold text-indigo-900 mb-1">Attached Resources</h3>
                     <p className="text-xs text-indigo-600/70">Files attached to the main task description.</p>
                   </div>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-4">
                     {(Array.isArray(task.attachments) ? task.attachments : [task.attachments]).map((url, idx) => (
-                      <button 
-                        key={idx}
-                        onClick={() => setPreviewUrl(url)}
-                        className="inline-flex items-center justify-center text-sm font-medium text-indigo-700 bg-white px-5 py-2.5 rounded-xl shadow-sm border border-indigo-200 hover:border-indigo-300 hover:shadow-md transition-all hover:-translate-y-0.5"
-                      >
-                        <Paperclip className="w-4 h-4 mr-2" /> View Attachment {idx + 1}
-                      </button>
+                      <React.Fragment key={idx}>
+                        {renderAttachmentPreview(url, `Attachment ${idx + 1}`)}
+                      </React.Fragment>
                     ))}
                   </div>
                 </div>
@@ -284,11 +306,9 @@ const TaskDetail = () => {
             </div>
 
             {/* Comments Section */}
-            {/* Comments Section */}
             <div className="mt-8">
               <h3 className="text-lg font-bold text-slate-800 mb-6">Activity</h3>
               
-
               {/* Add Comment Form */}
               <div className="flex gap-4 mb-8">
                 <div className="w-10 h-10 rounded-full bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-400 font-bold border border-slate-200">
@@ -298,12 +318,39 @@ const TaskDetail = () => {
                   <form onSubmit={submitComment} className="relative">
                     <textarea
                       className="w-full p-3 border border-slate-300 rounded-md text-slate-700 text-sm outline-none resize-y min-h-[50px] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-slate-400"
-                      placeholder="Add a comment..."
+                      placeholder="Add a comment... (paste files here too)"
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       onPaste={handlePaste}
-                      required
                     />
+                    
+                    {attachment && attachment.length > 0 && (
+                      <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg flex flex-col gap-2">
+                        <div className="flex items-center justify-between text-xs font-semibold text-slate-600 mb-1">
+                          <span className="flex items-center gap-1.5"><Paperclip className="w-3.5 h-3.5" /> Attached {attachment.length} file(s)</span>
+                          <button type="button" onClick={() => { setAttachment(null); document.getElementById("attachment-input").value = ""; }} className="text-red-500 hover:text-red-700 hover:underline">Remove All</button>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                          {Array.from(attachment).map((file, idx) => {
+                            const isImg = file.type.startsWith('image/');
+                            const url = URL.createObjectURL(file);
+                            return (
+                              <div key={idx} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-slate-200 shadow-sm bg-white flex items-center justify-center">
+                                {isImg ? (
+                                  <img src={url} alt="preview" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="text-[10px] text-slate-400 font-medium text-center px-1 break-all">
+                                    <FileText className="w-5 h-5 mx-auto mb-1 text-slate-300" />
+                                    {file.name.substring(0, 10)}...
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex justify-between mt-2">
                       <div />
                       <div className="flex items-center gap-3">
@@ -314,25 +361,28 @@ const TaskDetail = () => {
                             multiple
                             id="attachment-input"
                             className="hidden" 
-                            onChange={(e) => setAttachment(e.target.files)}
+                            onChange={(e) => {
+                              // Append new files to existing attachment if present
+                              if (attachment && attachment.length > 0) {
+                                const dt = new DataTransfer();
+                                Array.from(attachment).forEach(f => dt.items.add(f));
+                                Array.from(e.target.files).forEach(f => dt.items.add(f));
+                                setAttachment(dt.files);
+                              } else {
+                                setAttachment(e.target.files);
+                              }
+                            }}
                           />
                         </label>
                         <button 
                           type="submit" 
-                          disabled={submitting || !commentText.trim()}
+                          disabled={submitting || (!commentText.trim() && (!attachment || attachment.length === 0))}
                           className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-4 py-1.5 rounded border border-blue-700 disabled:opacity-50 disabled:bg-blue-400 disabled:border-blue-400 transition-colors"
                         >
                           {submitting ? "Saving..." : "Save"}
                         </button>
                       </div>
                     </div>
-                    {attachment && attachment.length > 0 && (
-                      <div className="text-xs mt-2 text-slate-600 flex items-center gap-2 bg-slate-50 p-2 rounded border border-slate-100 w-max">
-                        <Paperclip className="w-3 h-3 text-slate-400" />
-                        <span>{attachment.length} file(s) attached</span>
-                        <button type="button" onClick={() => { setAttachment(null); document.getElementById("attachment-input").value = ""; }} className="text-red-500 hover:underline ml-2">Remove</button>
-                      </div>
-                    )}
                   </form>
                 </div>
               </div>
@@ -359,25 +409,21 @@ const TaskDetail = () => {
                             </span>
                           </div>
                           
-                          <p className="whitespace-pre-wrap leading-relaxed text-slate-700 mt-1">{comment.text}</p>
+                          {comment.text && comment.text.trim() && (
+                            <p className="whitespace-pre-wrap leading-relaxed text-slate-700 mt-1">{comment.text}</p>
+                          )}
                           
                           {(comment.attachments || comment.attachment) && (
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {(Array.isArray(comment.attachments) ? comment.attachments : (comment.attachments ? [comment.attachments] : [comment.attachment])).map((url, idx) => (
-                                <button 
-                                  key={idx}
-                                  onClick={() => setPreviewUrl(url)}
-                                  className="text-xs font-medium text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 px-3 py-1.5 rounded transition-colors flex items-center"
-                                >
-                                  <Paperclip className="w-3 h-3 mr-1.5 text-slate-400" /> View File {idx + 1}
-                                </button>
+                            <div className="mt-3 flex flex-wrap gap-3">
+                              {(Array.isArray(comment.attachments) ? comment.attachments : (comment.attachments ? [comment.attachments] : [comment.attachment])).map((url, attachIdx) => (
+                                <React.Fragment key={attachIdx}>
+                                  {renderAttachmentPreview(url, `File ${attachIdx + 1}`, true)}
+                                </React.Fragment>
                               ))}
                             </div>
                           )}
 
                           <div className="mt-3 flex items-center gap-3 text-xs text-slate-500 font-medium">
-                            <button className="hover:underline hover:text-slate-700 transition-colors">Edit</button>
-                            <span>&middot;</span>
                             {(role === "Superadmin" || isMyComment) ? (
                                <button 
                                  onClick={() => setCommentToDelete(comment._id)}
@@ -491,19 +537,32 @@ const TaskDetail = () => {
               ) : (
                 <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300 max-h-[60vh] overflow-y-auto pr-2">
                   {allDocuments.length > 0 ? allDocuments.map((doc, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-sm transition-all group">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                          <Paperclip className="w-4 h-4" />
+                    <div key={idx} className="flex flex-col p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-sm transition-all group">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <div className="truncate pr-2 text-xs font-medium text-slate-700">Document {idx + 1}</div>
                         </div>
-                        <div className="truncate pr-2 text-xs font-medium text-slate-700">Document {idx + 1}</div>
+                        <button 
+                          onClick={() => setPreviewUrl(doc)}
+                          className="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-all shrink-0"
+                        >
+                          View
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => setPreviewUrl(doc)}
-                        className="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-all shrink-0"
-                      >
-                        View
-                      </button>
+                      {isImageUrl(doc) && (
+                        <div 
+                          className="w-full h-32 rounded-lg overflow-hidden border border-slate-200 cursor-pointer relative"
+                          onClick={() => setPreviewUrl(doc)}
+                        >
+                          <img src={doc} alt={`Document ${idx + 1}`} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-slate-900/0 hover:bg-slate-900/20 transition-colors flex items-center justify-center">
+                            <ExternalLink className="w-6 h-6 text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-md" />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )) : (
                     <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
@@ -536,8 +595,11 @@ const TaskDetail = () => {
               </div>
             </div>
             <div className="flex-1 overflow-auto bg-slate-100/50 p-4 flex justify-center items-center min-h-[50vh]">
-               {/* Use iframe to support both PDFs and Images natively in the browser */}
-               <iframe src={previewUrl} className="w-full h-[70vh] rounded-xl border border-slate-200 bg-white" title="File Preview" />
+               {isImageUrl(previewUrl) ? (
+                 <img src={previewUrl} className="max-w-full max-h-[70vh] rounded-xl object-contain shadow-sm bg-white" alt="Preview" />
+               ) : (
+                 <iframe src={previewUrl} className="w-full h-[70vh] rounded-xl border border-slate-200 bg-white" title="File Preview" />
+               )}
             </div>
           </div>
         </div>
