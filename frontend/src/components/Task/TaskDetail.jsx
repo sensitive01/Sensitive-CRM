@@ -172,7 +172,9 @@ const TaskDetail = () => {
 
   const isImageUrl = (url) => {
     if (!url) return false;
-    return url.match(/\.(jpeg|jpg|gif|png|webp|svg|bmp)(\?.*)?$/i) != null;
+    if (url.match(/\.(jpeg|jpg|gif|png|webp|svg|bmp)(\?.*)?$/i) != null) return true;
+    if (url.includes('cloudinary.com') && url.includes('/image/upload/') && !url.match(/\.[a-z0-9]+(\?.*)?$/i)) return true;
+    return false;
   };
 
   const isVideoUrl = (url) => {
