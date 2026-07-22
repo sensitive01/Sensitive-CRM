@@ -14,24 +14,27 @@ const ExpenseTable = () => {
     const [selectedExpense, setSelectedExpense] = useState(null);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+    const [isFilterApplied, setIsFilterApplied] = useState(false);
 
     const navigate = useNavigate();
-    useEffect(() => {
-        const fetchExpenseData = async () => {
-            try {
-                const response = await getTotalExpense();
-                if (response.status === 200) {
-                    const expenseData = Array.isArray(response.data) ? response.data : response.data.expenses || [];
-                    setExpenses(expenseData);
-                } else {
-                    setError('Failed to load expense data');
-                }
-            } catch (error) {
+
+    const fetchExpenseData = async () => {
+        try {
+            const response = await getTotalExpense();
+            if (response.status === 200) {
+                const expenseData = Array.isArray(response.data) ? response.data : response.data.expenses || [];
+                setExpenses(expenseData);
+            } else {
                 setError('Failed to load expense data');
-            } finally {
-                setLoading(false);
             }
-        };
+        } catch (error) {
+            setError('Failed to load expense data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchExpenseData();
     }, []);
     const handleEdit = (expenseId) => {
@@ -84,6 +87,14 @@ const handleDelete = async (expenseId) => {
         });
 
         setExpenses(filteredExpenses);
+        setIsFilterApplied(true);
+    };
+
+    const clearDateFilter = () => {
+        setStartDate("");
+        setEndDate("");
+        setIsFilterApplied(false);
+        fetchExpenseData();
     };
     const columns = useMemo(() => [
         { Header: 'S.No', accessor: (row, index) => index + 1 },
@@ -175,7 +186,7 @@ const handleDelete = async (expenseId) => {
     if (loading) {
         return (
             <div className="flex justify-center items-center h-screen">
-                <div className="text-xl">Loading...</div>
+              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
             </div>
         );
     }
@@ -230,12 +241,19 @@ const handleDelete = async (expenseId) => {
                             />
                         </div>
                         <button
-
                             onClick={applyDateFilter}
                             className="bg-blue-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6"
                         >
                             Apply Filter
                         </button>
+                        {isFilterApplied && (
+                            <button
+                                onClick={clearDateFilter}
+                                className="bg-gray-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
+                            >
+                                Clear Filter
+                            </button>
+                        )}
                     </div>
                     <div className="flex space-x-4">
                         <button

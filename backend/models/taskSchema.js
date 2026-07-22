@@ -39,6 +39,17 @@ const taskSchema = new mongoose.Schema({
       empName: { type: String },
       attachments: { type: [String], default: [] }, // Optional file attachment urls
       createdAt: { type: Date, default: Date.now },
+      isEdited: { type: Boolean, default: false },
+      replies: [
+        {
+          text: { type: String, required: true },
+          empId: { type: String, required: true },
+          empName: { type: String },
+          attachments: { type: [String], default: [] },
+          createdAt: { type: Date, default: Date.now },
+          isEdited: { type: Boolean, default: false },
+        }
+      ]
     },
   ],
 },

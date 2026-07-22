@@ -21,6 +21,7 @@ const AdjustmentTable = () => {
   const [selectedPayroll, setSelectedPayroll] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -108,7 +109,16 @@ const AdjustmentTable = () => {
     });
 
     setPayroll(filteredPayrolls);
+    setIsFilterApplied(true);
   };
+
+  const clearDateFilter = () => {
+    setStartDate("");
+    setEndDate("");
+    setIsFilterApplied(false);
+    fetchPayrolls();
+  };
+
 
   const columns = useMemo(
     () => [
@@ -247,7 +257,9 @@ const AdjustmentTable = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="text-xl">Loading...</div>
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+        </div>
       </div>
     );
   }
@@ -309,6 +321,14 @@ const AdjustmentTable = () => {
           >
             Apply Filter
           </button>
+          {isFilterApplied && (
+            <button
+              onClick={clearDateFilter}
+              className="bg-gray-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
+            >
+              Clear Filter
+            </button>
+          )}
         </div>
 
         <div className="flex space-x-4">

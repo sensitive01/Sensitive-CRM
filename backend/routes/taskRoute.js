@@ -16,6 +16,8 @@ taskRouter.put('/update-status/:id', taskController.updateTaskStatus);
 taskRouter.get('/totaltasks', taskController.getTotalTasks);
 taskRouter.get("/employee/:empId", taskController.getTasksByEmployee);
 taskRouter.post('/add-comment/:id', upload.array("attachments", 10), taskController.addTaskComment);
-taskRouter.delete('/delete-comment/:id/:commentId', taskController.deleteTaskComment);
+taskRouter.post('/add-reply/:id/:commentId', upload.array("attachments", 10), taskController.addCommentReply);
+taskRouter.put('/edit-comment/:id/:commentId', upload.array("attachments", 10), taskController.editTaskComment);
+taskRouter.put('/edit-reply/:id/:commentId/:replyId', upload.array("attachments", 10), taskController.editCommentReply);
 
 module.exports = taskRouter;

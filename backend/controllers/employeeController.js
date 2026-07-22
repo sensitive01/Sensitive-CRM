@@ -197,10 +197,29 @@ const getMonthDateRange = (monthOffset = 0) => {
 
 const getAllEmployeesWithData = async (req, res) => {
   try {
-    const currentMonthData = getMonthDateRange(0);
-    const prevMonthData = getMonthDateRange(-1);
+    //const currentMonthData = getMonthDateRange(0);
+    //const prevMonthData = getMonthDateRange(-1);
+    let currentMonthData = getMonthDateRange(0);
+    let prevMonthData = getMonthDateRange(-1);
 
-    const employees = await Employee.find({}, 'name empId department salary shiftStartTime shiftEndTime');
+    if (req.query.month && req.query.year) {
+      const year = parseInt(req.query.year);
+      const month = parseInt(req.query.month) - 1;
+      currentMonthData = {
+        firstDay: new Date(year, month, 1),
+        lastDay: new Date(year, month + 1, 0),
+        totalDays: new Date(year, month + 1, 0).getDate()
+      };
+      // When a specific month is queried, we'll just populate 'currentMonth' with it.
+    }
+
+    const employees = await Employee.find({
+      $or: [
+        { status: { $exists: false } },
+        { status: { $not: { $regex: /inactive/i } } }
+      ]
+    }, 'name empId department salary shiftStartTime shiftEndTime status');
+    //const employees = await Employee.find({}, 'name empId department salary shiftStartTime shiftEndTime');
     const empIds = employees.map(e => e.empId);
     const empNames = employees.map(e => e.name);
 

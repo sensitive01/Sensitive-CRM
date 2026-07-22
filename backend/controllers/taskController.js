@@ -237,34 +237,148 @@ const addTaskComment = async (req, res) => {
 };
 
 
-// ================= DELETE COMMENT =================
-const deleteTaskComment = async (req, res) => {
+// ================= ADD COMMENT REPLY =================
+const addCommentReply = async (req, res) => {
   try {
     const { id, commentId } = req.params;
-    const task = await Task.findById(id);
+    const { text, empId, empName } = req.body;
+    let attachmentsUrls = [];
 
+    if (!text || !empId) {
+      return res.status(400).json({ message: "Reply text and employee ID are required" });
+    }
+
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map(file => uploadImage(file.buffer));
+      attachmentsUrls = await Promise.all(uploadPromises);
+    }
+
+    const task = await Task.findById(id);
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
 
-    const commentIndex = task.comments.findIndex(
-      (c) => c._id.toString() === commentId
-    );
-
+    const commentIndex = task.comments.findIndex(c => c._id.toString() === commentId);
     if (commentIndex === -1) {
       return res.status(404).json({ message: "Comment not found" });
     }
 
-    task.comments.splice(commentIndex, 1);
+    const newReply = {
+      text,
+      empId,
+      empName,
+      attachments: attachmentsUrls,
+    };
+
+    task.comments[commentIndex].replies.push(newReply);
     await task.save();
 
-    res.status(200).json({ message: "Comment deleted successfully", task });
+    res.status(200).json({ message: "Reply added successfully", task });
   } catch (error) {
-    console.error("Error deleting comment:", error);
-    res.status(500).json({ message: "Failed to delete comment", error: error.message });
+    console.error("Error adding reply:", error);
+    res.status(500).json({ message: "Failed to add reply", error: error.message });
   }
 };
 
+
+// ================= EDIT COMMENT =================
+const editTaskComment = async (req, res) => {
+  try {
+    const { id, commentId } = req.params;
+    const { text } = req.body;
+    let attachmentsUrls = [];
+
+    if (!text) {
+      return res.status(400).json({ message: "Comment text is required" });
+    }
+
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map(file => uploadImage(file.buffer));
+      attachmentsUrls = await Promise.all(uploadPromises);
+    }
+
+    const task = await Task.findById(id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    const comment = task.comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    const today = new Date().toDateString();
+    const commentDate = new Date(comment.createdAt).toDateString();
+    
+    if (today !== commentDate) {
+      return res.status(403).json({ message: "Comments can only be edited on the day they were created." });
+    }
+
+    comment.text = text;
+    comment.isEdited = true;
+    if (attachmentsUrls.length > 0) {
+      comment.attachments = [...comment.attachments, ...attachmentsUrls];
+    }
+
+    await task.save();
+    res.status(200).json({ message: "Comment edited successfully", task });
+  } catch (error) {
+    console.error("Error editing comment:", error);
+    res.status(500).json({ message: "Failed to edit comment", error: error.message });
+  }
+};
+
+// ================= EDIT COMMENT REPLY =================
+const editCommentReply = async (req, res) => {
+  try {
+    const { id, commentId, replyId } = req.params;
+    const { text } = req.body;
+    let attachmentsUrls = [];
+
+    if (!text) {
+      return res.status(400).json({ message: "Reply text is required" });
+    }
+
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map(file => uploadImage(file.buffer));
+      attachmentsUrls = await Promise.all(uploadPromises);
+    }
+
+    const task = await Task.findById(id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    const comment = task.comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    const reply = comment.replies.id(replyId);
+    if (!reply) {
+      return res.status(404).json({ message: "Reply not found" });
+    }
+
+    const today = new Date().toDateString();
+    const replyDate = new Date(reply.createdAt).toDateString();
+    
+    if (today !== replyDate) {
+      return res.status(403).json({ message: "Replies can only be edited on the day they were created." });
+    }
+
+    reply.text = text;
+    reply.isEdited = true;
+    if (attachmentsUrls.length > 0) {
+      reply.attachments = [...reply.attachments, ...attachmentsUrls];
+    }
+
+    await task.save();
+    res.status(200).json({ message: "Reply edited successfully", task });
+  } catch (error) {
+    console.error("Error editing reply:", error);
+    res.status(500).json({ message: "Failed to edit reply", error: error.message });
+  }
+};
 
 module.exports = {
   createTask,
@@ -276,5 +390,7 @@ module.exports = {
   getTotalTasks,
   getTasksByEmployee,
   addTaskComment,
-  deleteTaskComment
+  addCommentReply,
+  editTaskComment,
+  editCommentReply
 };

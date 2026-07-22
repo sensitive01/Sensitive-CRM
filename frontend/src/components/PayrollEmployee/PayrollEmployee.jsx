@@ -12,7 +12,11 @@ const PayrollEmployee = () => {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [payrollData, setPayrollData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
-  const [activeFilter, setActiveFilter] = useState("current");
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const d = new Date();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    return `${d.getFullYear()}-${m}`;
+  });
   const [role, setRole] = useState(
     localStorage.getItem("role") || "Superadmin",
   );
@@ -41,20 +45,23 @@ const PayrollEmployee = () => {
   };
 
   useEffect(() => {
-    fetchPayrollData();
-  }, []);
+    fetchPayrollData(selectedMonth);
+  }, [selectedMonth]);
 
   useEffect(() => {
     if (payrollData.length > 0) {
-      applyMonthFilter(activeFilter);
+      applyMonthFilter();
     }
-  }, [payrollData, activeFilter]);
+  }, [payrollData]);
 
-  const fetchPayrollData = async () => {
+  const fetchPayrollData = async (monthStr) => {
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_BASE_URL}/allemployeesdata`,
-      );
+      let url = `${import.meta.env.VITE_BASE_URL}/allemployeesdata`;
+      if (monthStr) {
+        const [year, month] = monthStr.split('-');
+        url += `?month=${month}&year=${year}`;
+      }
+      const response = await axios.get(url);
       if (response.data.success) {
         console.log("Raw API data:", response.data.data);
         setPayrollData(response.data.data);
@@ -73,9 +80,7 @@ const PayrollEmployee = () => {
         `${import.meta.env.VITE_BASE_URL}/attendance-all/${apiUserId}`,
       );
       if (response.data) {
-        const { firstDay, lastDay, totalDays } = getMonthDateRange(
-          activeFilter === "current" ? 0 : -1,
-        );
+        const { firstDay, lastDay, totalDays } = getMonthDateRange();
 
         let filteredRecords = response.data.filter((record) => {
           const recordDate = new Date(record.date || record.createdAt);
@@ -167,12 +172,10 @@ const PayrollEmployee = () => {
     return date;
   };
 
-  const getMonthDateRange = (monthOffset = 0) => {
-    const date = new Date();
-    date.setMonth(date.getMonth() + monthOffset);
-
-    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const getMonthDateRange = () => {
+    const [year, month] = selectedMonth.split('-');
+    const firstDay = new Date(year, parseInt(month) - 1, 1);
+    const lastDay = new Date(year, parseInt(month), 0);
 
     // Set time to beginning and end of day respectively
     firstDay.setHours(0, 0, 0, 0);
@@ -204,52 +207,28 @@ const PayrollEmployee = () => {
     setDayFilter("all");
   };
 
-  const applyMonthFilter = (filter) => {
-    let result = [];
+  const applyMonthFilter = () => {
+    const result = payrollData
+      .filter((employee) => employee.currentMonth)
+      .map((employee, index) => ({
+        serial: index + 1,
+        name: employee.name || "",
+        empId: employee.empId || "",
+        department: employee.department || "",
+        totalDays: employee.currentMonth?.totalDays || 0,
+        workingDays: employee.currentMonth?.workingDays || 0,
+        salary: employee.salary || 0,
+        present: employee.currentMonth?.present || 0,
+        absent: employee.currentMonth?.absent || 0,
+        lateDays: employee.currentMonth?.lateDays || 0,
+        lateTime: employee.currentMonth?.lateTime || "0h 0m",
+        allowances: employee.currentMonth?.totalAllowances || 0,
+        deductions: employee.currentMonth?.totalDeductions || 0,
+        advances: employee.currentMonth?.totalAdvances || 0,
+        payable: employee.currentMonth?.payable || 0,
+      }));
 
-    if (filter === "current") {
-      result = payrollData
-        .filter((employee) => employee.currentMonth)
-        .map((employee, index) => ({
-          serial: index + 1,
-          name: employee.name || "",
-          empId: employee.empId || "",
-          department: employee.department || "",
-          totalDays: employee.currentMonth?.totalDays || 0,
-          workingDays: employee.currentMonth?.workingDays || 0,
-          salary: employee.salary || 0,
-          present: employee.currentMonth?.present || 0,
-          absent: employee.currentMonth?.absent || 0,
-          lateDays: employee.currentMonth?.lateDays || 0,
-          lateTime: employee.currentMonth?.lateTime || "0h 0m",
-          allowances: employee.currentMonth?.totalAllowances || 0,
-          deductions: employee.currentMonth?.totalDeductions || 0,
-          advances: employee.currentMonth?.totalAdvances || 0,
-          payable: employee.currentMonth?.payable || 0,
-        }));
-    } else if (filter === "previous") {
-      result = payrollData
-        .filter((employee) => employee.previousMonth)
-        .map((employee, index) => ({
-          serial: index + 1,
-          name: employee.name || "",
-          empId: employee.empId || "",
-          department: employee.department || "",
-          totalDays: employee.previousMonth?.totalDays || 0,
-          workingDays: employee.previousMonth?.workingDays || 0,
-          salary: employee.salary || 0,
-          present: employee.previousMonth?.present || 0,
-          absent: employee.previousMonth?.absent || 0,
-          lateDays: employee.previousMonth?.lateDays || 0,
-          lateTime: employee.previousMonth?.lateTime || "0h 0m",
-          allowances: employee.previousMonth?.totalAllowances || 0,
-          deductions: employee.previousMonth?.totalDeductions || 0,
-          advances: employee.previousMonth?.totalAdvances || 0,
-          payable: employee.previousMonth?.payable || 0,
-        }));
-    }
-
-    console.log(`Filtered ${filter} month data:`, result);
+    console.log(`Filtered month data:`, result);
     setFilteredData(result);
     setCurrentPage(1);
   };
@@ -271,16 +250,8 @@ const PayrollEmployee = () => {
     }
   };
 
-  const handleCurrentMonth = () => {
-    setActiveFilter("current");
-  };
-
-  const handlePreviousMonth = () => {
-    setActiveFilter("previous");
-  };
-
   const exportToExcel = () => {
-    const monthLabel = activeFilter === "current" ? "Current" : "Previous";
+    const monthLabel = displayMonthName;
 
     const exportData = filteredData.map((item) => ({
       Name: item.name,
@@ -308,18 +279,18 @@ const PayrollEmployee = () => {
     );
     XLSX.writeFile(
       workbook,
-      `Payroll_Data_${monthLabel}_Month_${new Date().toISOString().split("T")[0]}.xlsx`,
+      `Payroll_Data_${monthLabel}_${new Date().toISOString().split("T")[0]}.xlsx`,
     );
   };
 
-  const getMonthName = (monthOffset = 0) => {
-    const date = new Date();
-    date.setMonth(date.getMonth() - monthOffset);
-    return date.toLocaleString("default", { month: "long" });
+  const getMonthName = (monthStr) => {
+    if (!monthStr) return "";
+    const [year, month] = monthStr.split('-');
+    const date = new Date(year, month - 1, 1);
+    return date.toLocaleString("default", { month: "long", year: "numeric" });
   };
 
-  const currentMonthName = getMonthName(0);
-  const previousMonthName = getMonthName(1);
+  const displayMonthName = getMonthName(selectedMonth);
 
   const handleEdit = (empId, e) => {
     e.stopPropagation();
@@ -351,28 +322,23 @@ const PayrollEmployee = () => {
     <div className="bg-white p-6 rounded-lg shadow">
       <div className="flex justify-between items-center mb-4 mt-24">
         <h1 className="text-2xl font-semibold text-gray-800">
-          Payroll Table -{" "}
-          {activeFilter === "current" ? currentMonthName : previousMonthName}
+          Payroll Table - {displayMonthName}
         </h1>
-        <div className="flex space-x-2">
-          <button
-            onClick={handlePreviousMonth}
-            className={`px-4 py-2 rounded ${activeFilter === "previous" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"}`}
-          >
-            {previousMonthName}
-          </button>
-          <button
-            onClick={handleCurrentMonth}
-            className={`px-4 py-2 rounded ${activeFilter === "current" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"}`}
-          >
-            {currentMonthName}
-          </button>
-          <button
-            onClick={exportToExcel}
-            className="bg-green-500 text-white px-4 py-2 rounded"
-          >
-            Export Data
-          </button>
+        <div className="flex items-center space-x-4">
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="flex space-x-2">
+            <button
+              onClick={exportToExcel}
+              className="bg-green-500 text-white px-4 py-2 rounded"
+            >
+              Export Data
+            </button>
+          </div>
         </div>
       </div>
 
@@ -495,8 +461,7 @@ const PayrollEmployee = () => {
                   colSpan={14}
                   className="px-6 py-4 text-center text-sm text-gray-500"
                 >
-                  No data available for{" "}
-                  {activeFilter === "current" ? "current" : "previous"} month
+                  No data available for {displayMonthName}
                 </td>
               </tr>
             )}

@@ -16,7 +16,7 @@ import {
   FileText,
 } from "lucide-react";
 import { FaPowerOff } from "react-icons/fa";
-import logo from "../../assets/logo light.png";
+import logo from "../../assets/logo_white_ST.png";
 
 const Topbar = () => {
   const [showProfile, setShowProfile] = useState(false);
@@ -28,7 +28,18 @@ const Topbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const mobileMenuRef = useRef(null);
   const searchInputRef = useRef(null);
+  const profileMenuRef = useRef(null);
   const [userProfile, setUserProfile] = useState(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Password Change State
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const navigate = useNavigate();
 
   const menuItems = [
@@ -113,11 +124,11 @@ const Topbar = () => {
     const storedRole = localStorage.getItem("role") || "Superadmin";
     setRole(storedRole);
     const handleClickOutside = (event) => {
-      if (
-        mobileMenuRef.current &&
-        !mobileMenuRef.current.contains(event.target)
-      ) {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
         setIsMobileMenuOpen(false);
+      }
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
       }
     };
 
@@ -165,6 +176,40 @@ const Topbar = () => {
     }
   };
 
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const empId = localStorage.getItem("empId");
+      const role = localStorage.getItem("role");
+
+      const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/employee-login/change-password`, {
+        empId,
+        role,
+        currentPassword,
+        newPassword
+      });
+
+      setPasswordSuccess(response.data.message || "Password updated successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      console.error("Error changing password:", error);
+      setPasswordError(error.response?.data?.message || "Failed to change password.");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   const renderMenuItem = (item, isMobile = false) => {
     const ItemIcon = item.icon;
 
@@ -185,8 +230,8 @@ const Topbar = () => {
               flex items-center justify-between cursor-pointer
               ${
                 isMobile
-                  ? "px-4 py-3 text-gray-100 hover:bg-blue-700 w-full"
-                  : "text-white hover:text-gray-400 px-3 py-2 rounded-md text-sm font-medium"
+                  ? "px-4 py-3 text-slate-700 hover:bg-slate-50 w-full"
+                  : "text-slate-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
               }
             `}
           >
@@ -204,7 +249,7 @@ const Topbar = () => {
               className={`
               ${
                 isMobile
-                  ? "bg-blue-700 w-full"
+                  ? "bg-slate-50 w-full"
                   : "absolute top-full left-0 mt-1 bg-white shadow-lg rounded-md min-w-[200px]"
               }
             `}
@@ -218,8 +263,8 @@ const Topbar = () => {
                     block px-4 py-2
                     ${
                       isMobile
-                        ? "text-gray-100 hover:bg-blue-800"
-                        : "text-gray-900 hover:bg-gray-300"
+                        ? "text-slate-700 hover:bg-slate-200"
+                        : "text-slate-700 hover:bg-slate-100"
                     }
                   `}
                 >
@@ -243,8 +288,8 @@ const Topbar = () => {
           flex items-center
           ${
             isMobile
-              ? "px-4 py-3 text-gray-100 hover:bg-blue-700 w-full"
-              : "text-white hover:text-gray-400 px-3 py-2 rounded-md text-sm font-medium"
+              ? "px-4 py-3 text-slate-700 hover:bg-slate-50 w-full"
+              : "text-slate-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
           }
         `}
       >
@@ -270,7 +315,7 @@ const Topbar = () => {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-blue-600 text-white shadow-md">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white text-slate-800 shadow-md">
         <div className="max-w-8xl mx-auto px-4">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
@@ -289,16 +334,40 @@ const Topbar = () => {
                 <Search className="h-5 w-5" />
               </button> */}
 
-              <button
-                onClick={handleLogout}
-                className="bg-white text-red-500 px-4 py-2 rounded-md hover:text-gray-500"
-              >
-                <FaPowerOff className="h-5 w-5" />
-              </button>
-              <User
-                className="h-6 w-6 cursor-pointer hover:text-gray-400 hidden md:block"
-                onClick={toggleProfile}
-              />
+              <div className="relative" ref={profileMenuRef}>
+                <User
+                  className="h-6 w-6 cursor-pointer text-slate-700 hover:text-blue-600 hidden md:block"
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                />
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50">
+                    <button
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        toggleProfile();
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Profile
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        setShowSettings(true);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Settings
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    >
+                      Log Out
+                    </button>
+                  </div>
+                )}
+              </div>
               <button
                 className="md:hidden p-2 rounded-md hover:bg-blue-700 focus:outline-none"
                 onClick={toggleMobileMenu}
@@ -430,6 +499,75 @@ const Topbar = () => {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="bg-blue-600 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-white text-lg font-semibold">Settings</h2>
+              <button onClick={() => setShowSettings(false)} className="text-white hover:text-gray-200">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Change Password</h3>
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                    required
+                  />
+                </div>
+                {passwordError && <div className="text-red-500 text-sm mt-2">{passwordError}</div>}
+                {passwordSuccess && <div className="text-green-500 text-sm mt-2">{passwordSuccess}</div>}
+                
+                <div className="pt-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowSettings(false)}
+                    className="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isChangingPassword}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:bg-blue-400"
+                  >
+                    {isChangingPassword ? "Saving..." : "Save Password"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

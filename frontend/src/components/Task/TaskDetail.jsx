@@ -15,8 +15,15 @@ const TaskDetail = () => {
   const [attachment, setAttachment] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [commentToDelete, setCommentToDelete] = useState(null);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingText, setEditingText] = useState("");
+  const [editingAttachment, setEditingAttachment] = useState(null);
+  const [submittingEdit, setSubmittingEdit] = useState(false);
   const [rightSidebarTab, setRightSidebarTab] = useState("Details");
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [replyAttachment, setReplyAttachment] = useState(null);
+  const [submittingReply, setSubmittingReply] = useState(false);
   const empId = localStorage.getItem("empId");
   const role = localStorage.getItem("role");
   const empName = localStorage.getItem("name");
@@ -42,6 +49,17 @@ const TaskDetail = () => {
           url,
           sender: c.empName || c.empId || "Commenter"
         })));
+      }
+      if (c.replies && c.replies.length > 0) {
+        c.replies.forEach(r => {
+          if (r.attachments || r.attachment) {
+            const replyAttachments = Array.isArray(r.attachments) ? r.attachments : [r.attachments || r.attachment];
+            allDocuments.push(...replyAttachments.map(url => ({
+              url,
+              sender: r.empName || r.empId || "Replier"
+            })));
+          }
+        });
       }
     });
   }
@@ -123,18 +141,77 @@ const TaskDetail = () => {
     }
   };
 
-  const executeDeleteComment = async () => {
-    if (!commentToDelete) return;
+  const submitReply = async (e, commentId) => {
+    e.preventDefault();
+    if (!replyText.trim() && (!replyAttachment || replyAttachment.length === 0)) return;
+
+    setSubmittingReply(true);
+    const formData = new FormData();
+    formData.append("text", replyText || " ");
+    formData.append("empId", empId);
+    if (empName) {
+      formData.append("empName", empName);
+    }
+    if (replyAttachment && replyAttachment.length > 0) {
+      Array.from(replyAttachment).forEach((file) => {
+        formData.append("attachments", file);
+      });
+    }
+
     try {
-      const res = await axios.delete(
-        `${import.meta.env.VITE_BASE_URL}/task/delete-comment/${id}/${commentToDelete}`
+      const res = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/task/add-reply/${id}/${commentId}`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
       setTask(res.data.task);
-      setCommentToDelete(null);
+      setReplyingTo(null);
+      setReplyText("");
+      setReplyAttachment(null);
+      if (document.getElementById(`reply-attachment-input-${commentId}`)) {
+        document.getElementById(`reply-attachment-input-${commentId}`).value = "";
+      }
     } catch (error) {
-      console.error("Error deleting comment:", error);
-      alert("Failed to delete comment.");
-      setCommentToDelete(null);
+      console.error("Error adding reply:", error);
+      const errorMsg = error.response?.data?.message || error.message || "Unknown error";
+      alert(`Failed to add reply. Server says: ${errorMsg}`);
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
+
+  const submitEdit = async (e, commentId, replyId = null) => {
+    e.preventDefault();
+    if (!editingText.trim() && (!editingAttachment || editingAttachment.length === 0)) return;
+
+    setSubmittingEdit(true);
+    const formData = new FormData();
+    formData.append("text", editingText || " ");
+    
+    if (editingAttachment && editingAttachment.length > 0) {
+      Array.from(editingAttachment).forEach((file) => {
+        formData.append("attachments", file);
+      });
+    }
+
+    try {
+      const url = replyId 
+        ? `${import.meta.env.VITE_BASE_URL}/task/edit-reply/${id}/${commentId}/${replyId}`
+        : `${import.meta.env.VITE_BASE_URL}/task/edit-comment/${id}/${commentId}`;
+        
+      const res = await axios.put(url, formData, { 
+        headers: { "Content-Type": "multipart/form-data" } 
+      });
+      setTask(res.data.task);
+      setEditingCommentId(null);
+      setEditingText("");
+      setEditingAttachment(null);
+    } catch (error) {
+      console.error("Error editing:", error);
+      const errorMsg = error.response?.data?.message || error.message || "Unknown error";
+      alert(`Failed to edit. Server says: ${errorMsg}`);
+    } finally {
+      setSubmittingEdit(false);
     }
   };
 
@@ -463,6 +540,7 @@ const TaskDetail = () => {
                               </span>
                               <span className="text-slate-500 text-xs">
                                 {new Date(comment.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })} at {new Date(comment.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                                {comment.isEdited && <span className="ml-1 text-slate-400 italic">(edited)</span>}
                               </span>
                             </div>
 
@@ -481,20 +559,219 @@ const TaskDetail = () => {
                             )}
 
                             <div className="mt-3 flex items-center gap-3 text-xs text-slate-500 font-medium">
-                              {(role === "Superadmin" || isMyComment) ? (
+                              <button 
+                                onClick={() => {
+                                  if (replyingTo === comment._id) { setReplyingTo(null); setReplyText(""); setReplyAttachment(null); }
+                                  else { setReplyingTo(comment._id); setReplyText(""); setReplyAttachment(null); setEditingCommentId(null); }
+                                }} 
+                                className="hover:underline hover:text-indigo-600 transition-colors text-slate-500"
+                              >
+                                Reply
+                              </button>
+                              
+                              {isMyComment && new Date(comment.createdAt).toDateString() === new Date().toDateString() && (
                                 <button
-                                  onClick={() => setCommentToDelete(comment._id)}
-                                  className="hover:underline hover:text-red-600 transition-colors text-slate-500"
+                                  onClick={() => {
+                                    if (editingCommentId === comment._id) { setEditingCommentId(null); setEditingText(""); setEditingAttachment(null); }
+                                    else { setEditingCommentId(comment._id); setEditingText(comment.text); setEditingAttachment(null); setReplyingTo(null); }
+                                  }}
+                                  className="hover:underline hover:text-indigo-600 transition-colors text-slate-500"
                                 >
-                                  Delete
+                                  Edit
                                 </button>
-                              ) : (
-                                <button className="hover:underline hover:text-slate-700 transition-colors text-slate-500">Delete</button>
                               )}
+                              
                               <span className="px-1 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
                               </span>
                             </div>
+
+                            {/* Edit Input Form */}
+                            {editingCommentId === comment._id && (
+                              <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <form onSubmit={(e) => submitEdit(e, comment._id)} className="relative flex gap-3">
+                                  <div className="flex-1">
+                                    <textarea
+                                      className="w-full p-2 border border-slate-300 rounded-md text-slate-700 text-sm outline-none resize-y min-h-[40px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-400"
+                                      placeholder="Edit comment..."
+                                      value={editingText}
+                                      onChange={(e) => setEditingText(e.target.value)}
+                                    />
+                                    {editingAttachment && editingAttachment.length > 0 && (
+                                      <div className="mt-2 text-xs text-indigo-600 font-medium">
+                                        {editingAttachment.length} file(s) attached
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between mt-2">
+                                      <div />
+                                      <div className="flex items-center gap-2">
+                                        <label className="cursor-pointer text-slate-400 hover:text-slate-700 p-1" title="Attach file">
+                                          <Paperclip className="w-4 h-4" />
+                                          <input
+                                            type="file"
+                                            multiple
+                                            accept="image/*,video/*,application/pdf"
+                                            className="hidden"
+                                            onChange={(e) => setEditingAttachment(filterValidFiles(e.target.files))}
+                                          />
+                                        </label>
+                                        <button
+                                          type="submit"
+                                          disabled={submittingEdit || (!editingText.trim() && (!editingAttachment || editingAttachment.length === 0))}
+                                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs px-3 py-1.5 rounded disabled:opacity-50 transition-colors"
+                                        >
+                                          {submittingEdit ? "Saving..." : "Save Edit"}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </form>
+                              </div>
+                            )}
+
+                            {/* Reply Input Form */}
+                            {replyingTo === comment._id && (
+                              <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <form onSubmit={(e) => submitReply(e, comment._id)} className="relative flex gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-400 border border-slate-200">
+                                    <User className="w-4 h-4" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <textarea
+                                      className="w-full p-2 border border-slate-300 rounded-md text-slate-700 text-sm outline-none resize-y min-h-[40px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-400"
+                                      placeholder="Write a reply..."
+                                      value={replyText}
+                                      onChange={(e) => setReplyText(e.target.value)}
+                                    />
+                                    {replyAttachment && replyAttachment.length > 0 && (
+                                      <div className="mt-2 text-xs text-indigo-600 font-medium">
+                                        {replyAttachment.length} file(s) attached
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between mt-2">
+                                      <div />
+                                      <div className="flex items-center gap-2">
+                                        <label className="cursor-pointer text-slate-400 hover:text-slate-700 p-1" title="Attach file">
+                                          <Paperclip className="w-4 h-4" />
+                                          <input
+                                            type="file"
+                                            multiple
+                                            accept="image/*,video/*,application/pdf"
+                                            id={`reply-attachment-input-${comment._id}`}
+                                            className="hidden"
+                                            onChange={(e) => setReplyAttachment(filterValidFiles(e.target.files))}
+                                          />
+                                        </label>
+                                        <button
+                                          type="submit"
+                                          disabled={submittingReply || (!replyText.trim() && (!replyAttachment || replyAttachment.length === 0))}
+                                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs px-3 py-1.5 rounded disabled:opacity-50 transition-colors"
+                                        >
+                                          {submittingReply ? "Replying..." : "Reply"}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </form>
+                              </div>
+                            )}
+
+                            {/* Replies List */}
+                            {comment.replies && comment.replies.length > 0 && (
+                              <div className="mt-4 space-y-4 pl-4 border-l-2 border-slate-100 ml-2">
+                                {comment.replies.map((reply, rIdx) => {
+                                  const isMyReply = empId === reply.empId;
+                                  return (
+                                    <div key={rIdx} className="flex gap-3 group">
+                                      <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center border border-transparent ${isMyReply ? 'bg-indigo-100 text-indigo-500' : 'bg-emerald-100 text-emerald-500'}`}>
+                                        <User className="w-4 h-4" />
+                                      </div>
+                                      <div className="flex-1 text-sm text-slate-800">
+                                        <div className="flex items-baseline gap-2 mb-1">
+                                          <span className="font-semibold text-slate-900 text-xs">
+                                            {reply.empName || reply.empId}
+                                          </span>
+                                          <span className="text-slate-500 text-[10px]">
+                                            {new Date(reply.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })} at {new Date(reply.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                                            {reply.isEdited && <span className="ml-1 text-slate-400 italic">(edited)</span>}
+                                          </span>
+                                        </div>
+                                        {reply.text && reply.text.trim() && (
+                                          <p className="whitespace-pre-wrap leading-relaxed text-slate-700 text-xs mt-1">{reply.text}</p>
+                                        )}
+                                        {reply.attachments && reply.attachments.length > 0 && (
+                                          <div className="mt-2 flex flex-wrap gap-2">
+                                            {reply.attachments.map((url, aIdx) => (
+                                              <React.Fragment key={aIdx}>
+                                                {renderAttachmentPreview(url, `File ${aIdx + 1}`, true)}
+                                              </React.Fragment>
+                                            ))}
+                                          </div>
+                                        )}
+                                        
+                                        <div className="mt-2 flex items-center gap-3 text-[10px] text-slate-500 font-medium">
+                                          {isMyReply && new Date(reply.createdAt).toDateString() === new Date().toDateString() && (
+                                            <button
+                                              onClick={() => {
+                                                const replyKey = `${comment._id}-${reply._id}`;
+                                                if (editingCommentId === replyKey) { setEditingCommentId(null); setEditingText(""); setEditingAttachment(null); }
+                                                else { setEditingCommentId(replyKey); setEditingText(reply.text); setEditingAttachment(null); setReplyingTo(null); }
+                                              }}
+                                              className="hover:underline hover:text-indigo-600 transition-colors text-slate-500"
+                                            >
+                                              Edit
+                                            </button>
+                                          )}
+                                        </div>
+
+                                        {/* Reply Edit Form */}
+                                        {editingCommentId === `${comment._id}-${reply._id}` && (
+                                          <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <form onSubmit={(e) => submitEdit(e, comment._id, reply._id)} className="relative flex gap-3">
+                                              <div className="flex-1">
+                                                <textarea
+                                                  className="w-full p-2 border border-slate-300 rounded-md text-slate-700 text-xs outline-none resize-y min-h-[35px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-400"
+                                                  placeholder="Edit reply..."
+                                                  value={editingText}
+                                                  onChange={(e) => setEditingText(e.target.value)}
+                                                />
+                                                {editingAttachment && editingAttachment.length > 0 && (
+                                                  <div className="mt-2 text-[10px] text-indigo-600 font-medium">
+                                                    {editingAttachment.length} file(s) attached
+                                                  </div>
+                                                )}
+                                                <div className="flex justify-between mt-1">
+                                                  <div />
+                                                  <div className="flex items-center gap-2">
+                                                    <label className="cursor-pointer text-slate-400 hover:text-slate-700 p-1" title="Attach file">
+                                                      <Paperclip className="w-3 h-3" />
+                                                      <input
+                                                        type="file"
+                                                        multiple
+                                                        accept="image/*,video/*,application/pdf"
+                                                        className="hidden"
+                                                        onChange={(e) => setEditingAttachment(filterValidFiles(e.target.files))}
+                                                      />
+                                                    </label>
+                                                    <button
+                                                      type="submit"
+                                                      disabled={submittingEdit || (!editingText.trim() && (!editingAttachment || editingAttachment.length === 0))}
+                                                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-[10px] px-2 py-1 rounded disabled:opacity-50 transition-colors"
+                                                    >
+                                                      {submittingEdit ? "Saving..." : "Save"}
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </form>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -677,45 +954,6 @@ const TaskDetail = () => {
                 <iframe src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewUrl)}&embedded=true`} className="w-full h-[70vh] rounded-xl border border-slate-200 bg-white" title="File Preview" />
               )}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Comment Confirmation Modal */}
-      {commentToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-md relative animate-in zoom-in-95 duration-200">
-            <div className="p-6 sm:p-8 text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                <AlertTriangle className="w-8 h-8 text-red-500" />
-              </div>
-              <h3 className="text-2xl font-extrabold text-slate-800 mb-2">Delete Comment?</h3>
-              <p className="text-slate-500 mb-8 leading-relaxed">
-                Are you sure you want to delete this comment? This action cannot be undone.
-              </p>
-
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => setCommentToDelete(null)}
-                  className="px-6 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors w-full sm:w-auto"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={executeDeleteComment}
-                  className="px-6 py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 shadow-sm hover:shadow-md hover:shadow-red-600/20 transition-all w-full sm:w-auto"
-                >
-                  Yes, Delete
-                </button>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setCommentToDelete(null)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
         </div>
       )}

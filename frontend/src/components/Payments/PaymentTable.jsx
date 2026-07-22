@@ -14,27 +14,30 @@ const PaymentTable = () => {
     const [selectedPayment, setSelectedPayment] = useState(null);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+    const [isFilterApplied, setIsFilterApplied] = useState(false);
 
     const navigate = useNavigate();
-    useEffect(() => {
-        const fetchPaymentData = async () => {
-            try {
-                const response = await getTotalPayments();
-                console.log("total payment fetched:", response);
 
-                if (response.status === 200) {
-                    const paymentData = Array.isArray(response.data) ? response.data : response.data.payments || [];
-                    setPayments(paymentData);
-                } else {
-                    console.error("Failed to fetch payment details:", response.status);
-                }
-            } catch (error) {
-                console.error("Error fetching payment details:", error);
-                setError('Failed to load payment data');
-            } finally {
-                setLoading(false);
+    const fetchPaymentData = async () => {
+        try {
+            const response = await getTotalPayments();
+            console.log("total payment fetched:", response);
+
+            if (response.status === 200) {
+                const paymentData = Array.isArray(response.data) ? response.data : response.data.payments || [];
+                setPayments(paymentData);
+            } else {
+                console.error("Failed to fetch payment details:", response.status);
             }
-        };
+        } catch (error) {
+            console.error("Error fetching payment details:", error);
+            setError('Failed to load payment data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchPaymentData();
     }, []);
 
@@ -72,6 +75,14 @@ const PaymentTable = () => {
         });
     
         setPayments(filteredPayments);
+        setIsFilterApplied(true);
+    };
+
+    const clearDateFilter = () => {
+        setStartDate("");
+        setEndDate("");
+        setIsFilterApplied(false);
+        fetchPaymentData();
     };
     
     const columns = useMemo(() => [
@@ -209,7 +220,13 @@ const PaymentTable = () => {
     const { globalFilter, pageIndex } = state;
     console.log("Payments before rendering:", payments);
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+        </div>
+      );
+    }
     if (error) return <div>{error}</div>;
 
     return (
@@ -252,12 +269,19 @@ const PaymentTable = () => {
                             />
                         </div>
                         <button
-
                             onClick={applyDateFilter}
                             className="bg-blue-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6"
                         >
                             Apply Filter
                         </button>
+                        {isFilterApplied && (
+                            <button
+                                onClick={clearDateFilter}
+                                className="bg-gray-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
+                            >
+                                Clear Filter
+                            </button>
+                        )}
                     </div>
                     <div className="flex space-x-4">
                         <button

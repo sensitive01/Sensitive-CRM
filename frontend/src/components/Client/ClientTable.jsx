@@ -17,21 +17,24 @@ const ClientTable = () => {
   const [error, setError] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
   const navigate = useNavigate();
 
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `${import.meta.env.VITE_BASE_URL}/clients/get-all`,
+      );
+      setClients(response.data);
+    } catch (err) {
+      setError("Failed to load client data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BASE_URL}/clients/get-all`,
-        );
-        setClients(response.data);
-      } catch (err) {
-        setError("Failed to load client data");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchClients();
   }, []);
 
@@ -94,6 +97,14 @@ const ClientTable = () => {
     });
 
     setClients(filteredClients);
+    setIsFilterApplied(true);
+  };
+
+  const clearDateFilter = () => {
+    setStartDate("");
+    setEndDate("");
+    setIsFilterApplied(false);
+    fetchClients();
   };
 
   const columns = useMemo(
@@ -253,7 +264,13 @@ const ClientTable = () => {
 
   const { globalFilter, pageIndex } = state;
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+      </div>
+    );
+  }
   if (error) return <div>{error}</div>;
 
   return (
@@ -305,6 +322,14 @@ const ClientTable = () => {
           >
             Apply Filter
           </button>
+          {isFilterApplied && (
+            <button
+              onClick={clearDateFilter}
+              className="bg-gray-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6"
+            >
+              Clear Filter
+            </button>
+          )}
         </div>
 
         <div className="flex space-x-4">

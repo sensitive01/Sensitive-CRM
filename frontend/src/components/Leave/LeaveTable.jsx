@@ -20,6 +20,7 @@ const LeaveTable = () => {
   const [error, setError] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [role, setRole] = useState(
     localStorage.getItem("role") || "Superadmin",
   );
@@ -182,7 +183,16 @@ const LeaveTable = () => {
     });
 
     setLeaves(filteredLeaves);
+    setIsFilterApplied(true);
   };
+
+  const clearDateFilter = () => {
+    setStartDate("");
+    setEndDate("");
+    setIsFilterApplied(false);
+    fetchProjects();
+  };
+
 
   const columns = useMemo(() => {
     const baseColumns = [
@@ -456,7 +466,9 @@ const LeaveTable = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="text-xl">Loading...</div>
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+        </div>
       </div>
     );
   }
@@ -526,6 +538,14 @@ const LeaveTable = () => {
               >
                 Apply Filter
               </button>
+          {isFilterApplied && (
+            <button
+              onClick={clearDateFilter}
+              className="bg-gray-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
+            >
+              Clear Filter
+            </button>
+          )}
             </div>
           </div>
         )}
