@@ -13,6 +13,7 @@ import {
 
 const ClientTable = () => {
   const [clients, setClients] = useState([]);
+  const [allClients, setAllClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [startDate, setStartDate] = useState("");
@@ -27,6 +28,7 @@ const ClientTable = () => {
         `${import.meta.env.VITE_BASE_URL}/clients/get-all`,
       );
       setClients(response.data);
+      setAllClients(response.data);
     } catch (err) {
       setError("Failed to load client data");
     } finally {
@@ -46,6 +48,7 @@ const ClientTable = () => {
         );
         if (response.status === 200) {
           setClients(clients.filter((client) => client._id !== clientId));
+          setAllClients(allClients.filter((client) => client._id !== clientId));
         }
       } catch (err) {
         setError("Failed to delete client");
@@ -91,7 +94,7 @@ const ClientTable = () => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    const filteredClients = clients.filter((client) => {
+    const filteredClients = allClients.filter((client) => {
       const clientDate = new Date(client.createdAt);
       return clientDate >= start && clientDate <= end;
     });
@@ -100,11 +103,12 @@ const ClientTable = () => {
     setIsFilterApplied(true);
   };
 
-  const clearDateFilter = () => {
+  const clearFilter = () => {
     setStartDate("");
     setEndDate("");
     setIsFilterApplied(false);
-    fetchClients();
+    setGlobalFilter("");
+    setClients(allClients);
   };
 
   const columns = useMemo(
@@ -322,10 +326,10 @@ const ClientTable = () => {
           >
             Apply Filter
           </button>
-          {isFilterApplied && (
+          {(isFilterApplied || globalFilter) && (
             <button
-              onClick={clearDateFilter}
-              className="bg-gray-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6"
+              onClick={clearFilter}
+              className="bg-gray-500 hover:bg-gray-600 transition text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
             >
               Clear Filter
             </button>

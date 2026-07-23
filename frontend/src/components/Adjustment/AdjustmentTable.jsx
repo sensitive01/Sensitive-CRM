@@ -15,6 +15,7 @@ import { getAllPayroll } from "../../api/services/projectServices";
 
 const AdjustmentTable = () => {
   const [payroll, setPayroll] = useState([]);
+  const [allPayroll, setAllPayroll] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,6 +32,7 @@ const AdjustmentTable = () => {
         console.log(response);
         if (response.status === 200) {
           setPayroll(response.data);
+          setAllPayroll(response.data);
         } else {
           throw new Error("Failed to fetch payroll");
         }
@@ -53,6 +55,9 @@ const AdjustmentTable = () => {
         if (response.status === 200) {
           setPayroll(
             payroll.filter((payrollItem) => payrollItem._id !== payrollId),
+          );
+          setAllPayroll(
+            allPayroll.filter((payrollItem) => payrollItem._id !== payrollId),
           );
         }
       } catch (err) {
@@ -103,7 +108,7 @@ const AdjustmentTable = () => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    const filteredPayrolls = payroll.filter((Payroll) => {
+    const filteredPayrolls = allPayroll.filter((Payroll) => {
       const PayrollDate = new Date(Payroll.createdAt);
       return PayrollDate >= start && PayrollDate <= end;
     });
@@ -112,11 +117,12 @@ const AdjustmentTable = () => {
     setIsFilterApplied(true);
   };
 
-  const clearDateFilter = () => {
+  const clearFilter = () => {
     setStartDate("");
     setEndDate("");
     setIsFilterApplied(false);
-    fetchPayrolls();
+    setGlobalFilter("");
+    setPayroll(allPayroll);
   };
 
 
@@ -321,10 +327,10 @@ const AdjustmentTable = () => {
           >
             Apply Filter
           </button>
-          {isFilterApplied && (
+          {(isFilterApplied || globalFilter) && (
             <button
-              onClick={clearDateFilter}
-              className="bg-gray-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
+              onClick={clearFilter}
+              className="bg-gray-500 hover:bg-gray-600 transition text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
             >
               Clear Filter
             </button>

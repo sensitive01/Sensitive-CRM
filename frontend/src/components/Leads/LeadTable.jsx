@@ -14,6 +14,7 @@ import {
 
 const LeadTable = () => {
   const [leads, setLeads] = useState([]);
+  const [allLeads, setAllLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [startDate, setStartDate] = useState("");
@@ -31,6 +32,7 @@ const LeadTable = () => {
           `${import.meta.env.VITE_BASE_URL}/leads/get-all`,
         );
         setLeads(response.data);
+        setAllLeads(response.data);
       } catch (err) {
         console.error("Error fetching leads:", err);
         setError("Failed to load lead data");
@@ -49,6 +51,7 @@ const LeadTable = () => {
         );
         if (response.status === 200) {
           setLeads(leads.filter((lead) => lead._id !== leadId));
+          setAllLeads(allLeads.filter((lead) => lead._id !== leadId));
         }
       } catch (err) {
         console.error("Error deleting lead:", err);
@@ -93,7 +96,7 @@ const LeadTable = () => {
     const start = new Date(startDate.split("/").reverse().join("/"));
     const end = new Date(endDate.split("/").reverse().join("/"));
 
-    const filteredLeads = leads.filter((lead) => {
+    const filteredLeads = allLeads.filter((lead) => {
       const leadDateParts = lead.createdAt.split("/");
       const leadDate = new Date(
         `20${leadDateParts[2]}-${leadDateParts[1]}-${leadDateParts[0]}`,
@@ -106,11 +109,12 @@ const LeadTable = () => {
     setIsFilterApplied(true);
   };
 
-  const clearDateFilter = () => {
+  const clearFilter = () => {
     setStartDate("");
     setEndDate("");
     setIsFilterApplied(false);
-    fetchLeads();
+    setGlobalFilter("");
+    setLeads(allLeads);
   };
 
 
@@ -266,14 +270,14 @@ const LeadTable = () => {
               >
                 Apply Filter
               </button>
-          {isFilterApplied && (
-            <button
-              onClick={clearDateFilter}
-              className="bg-gray-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
-            >
-              Clear Filter
-            </button>
-          )}
+              {(isFilterApplied || globalFilter) && (
+                <button
+                  onClick={clearFilter}
+                  className="bg-gray-500 hover:bg-gray-600 transition text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-2"
+                >
+                  Clear Filter
+                </button>
+              )}
             </>
           )}
         </div>

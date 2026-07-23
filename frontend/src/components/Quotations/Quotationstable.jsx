@@ -8,6 +8,7 @@ import { deleteQuotations, getTotalQuotations } from '../../api/services/project
 
 const QuotationTable = () => {
     const [quotations, setQuotations] = useState([]);
+    const [allQuotations, setAllQuotations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,6 +25,7 @@ const QuotationTable = () => {
             if (response.status === 200) {
                 const quotationData = Array.isArray(response.data) ? response.data : response.data.quotations || [];
                 setQuotations(quotationData);
+                setAllQuotations(quotationData);
             } else {
                 setError('Failed to load quotation data');
             }
@@ -54,6 +56,7 @@ const QuotationTable = () => {
         try {
             await deleteQuotations(quotation._id);
             setQuotations(prevQuotations => prevQuotations.filter(q => q._id !== quotation._id));
+            setAllQuotations(prevQuotations => prevQuotations.filter(q => q._id !== quotation._id));
             alert("Quotation deleted successfully!");
         } catch (error) {
             console.error("Error deleting quotation:", error);
@@ -82,7 +85,7 @@ const QuotationTable = () => {
         const start = new Date(startDate);
         const end = new Date(endDate);
 
-        const filteredQuotations = quotations.filter((quotation) => {
+        const filteredQuotations = allQuotations.filter((quotation) => {
             const quotationDate = new Date(quotation.quotationDate || quotation.createdAt);
             return quotationDate >= start && quotationDate <= end;
         });
@@ -91,11 +94,12 @@ const QuotationTable = () => {
         setIsFilterApplied(true);
     };
 
-    const clearDateFilter = () => {
+    const clearFilter = () => {
         setStartDate("");
         setEndDate("");
         setIsFilterApplied(false);
-        fetchQuotationData();
+        setGlobalFilter("");
+        setQuotations(allQuotations);
     };
     const columns = useMemo(() => [
         { Header: 'S.No', accessor: (row, index) => index + 1 },
@@ -264,10 +268,10 @@ const QuotationTable = () => {
                         >
                             Apply Filter
                         </button>
-                        {isFilterApplied && (
+                        {(isFilterApplied || globalFilter) && (
                             <button
-                                onClick={clearDateFilter}
-                                className="bg-gray-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
+                                onClick={clearFilter}
+                                className="bg-gray-500 hover:bg-gray-600 transition text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
                             >
                                 Clear Filter
                             </button>

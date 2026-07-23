@@ -8,6 +8,7 @@ import { getTotalExpense,deleteExpenseById  } from '../../api/services/projectSe
 
 const ExpenseTable = () => {
     const [expenses, setExpenses] = useState([]);
+    const [allExpenses, setAllExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,6 +25,7 @@ const ExpenseTable = () => {
             if (response.status === 200) {
                 const expenseData = Array.isArray(response.data) ? response.data : response.data.expenses || [];
                 setExpenses(expenseData);
+                setAllExpenses(expenseData);
             } else {
                 setError('Failed to load expense data');
             }
@@ -49,6 +51,9 @@ const handleDelete = async (expenseId) => {
 
         // UI update without reload
         setExpenses((prevExpenses) =>
+            prevExpenses.filter((expense) => expense._id !== expenseId)
+        );
+        setAllExpenses((prevExpenses) =>
             prevExpenses.filter((expense) => expense._id !== expenseId)
         );
     } catch (error) {
@@ -81,7 +86,7 @@ const handleDelete = async (expenseId) => {
         const start = new Date(startDate);
         const end = new Date(endDate);
 
-        const filteredExpenses = expenses.filter((expense) => {
+        const filteredExpenses = allExpenses.filter((expense) => {
             const expenseDate = new Date(expense.createdAt);
             return expenseDate >= start && expenseDate <= end;
         });
@@ -90,11 +95,12 @@ const handleDelete = async (expenseId) => {
         setIsFilterApplied(true);
     };
 
-    const clearDateFilter = () => {
+    const clearFilter = () => {
         setStartDate("");
         setEndDate("");
         setIsFilterApplied(false);
-        fetchExpenseData();
+        setGlobalFilter("");
+        setExpenses(allExpenses);
     };
     const columns = useMemo(() => [
         { Header: 'S.No', accessor: (row, index) => index + 1 },
@@ -246,9 +252,9 @@ const handleDelete = async (expenseId) => {
                         >
                             Apply Filter
                         </button>
-                        {isFilterApplied && (
+                        {(isFilterApplied || globalFilter) && (
                             <button
-                                onClick={clearDateFilter}
+                                onClick={clearFilter}
                                 className="bg-gray-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
                             >
                                 Clear Filter

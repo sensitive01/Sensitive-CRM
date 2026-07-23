@@ -120,25 +120,51 @@ const EmployeeTable = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
   const navigate = useNavigate();
 
   // Fetch employees
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `${import.meta.env.VITE_BASE_URL}/getallemployees`,
+      );
+      setEmployees(response.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(
-          `${import.meta.env.VITE_BASE_URL}/getallemployees`,
-        );
-        setEmployees(response.data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchEmployees();
   }, []);
+
+  const applyDateFilter = () => {
+    if (!startDate || !endDate) {
+      alert("Please select both start and end dates.");
+      return;
+    }
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    const filteredEmployees = employees.filter((emp) => {
+      if (!emp.createdAt) return false;
+      const empDate = new Date(emp.createdAt);
+      return empDate >= start && empDate <= end;
+    });
+    setEmployees(filteredEmployees);
+    setIsFilterApplied(true);
+  };
+
+  const clearFilter = () => {
+    setStartDate("");
+    setEndDate("");
+    setIsFilterApplied(false);
+    fetchEmployees();
+  };
 
   // Handle status toggle
   const handleToggleStatus = (row) => {
@@ -399,13 +425,19 @@ const EmployeeTable = () => {
             />
           </div>
           <button
-            onClick={() => {
-              /* your applyDateFilter logic */
-            }}
-            className="bg-blue-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6"
+            onClick={applyDateFilter}
+            className="bg-blue-500 hover:bg-blue-600 transition text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6"
           >
             Apply Filter
           </button>
+          {isFilterApplied && (
+            <button
+              onClick={clearFilter}
+              className="bg-gray-500 hover:bg-gray-600 transition text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6"
+            >
+              Clear Filter
+            </button>
+          )}
         </div>
 
         <div className="flex space-x-4">

@@ -155,33 +155,43 @@ const ProjectManager = () => {
   const ITEMS_PER_PAGE = 10;
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [role, setRole] = useState(
     localStorage.getItem("role") || "Superadmin",
   );
   const id = localStorage.getItem("empId");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_BASE_URL}/project/getallprojects/${id}`,
-        );
-        const data = await response.json();
-        if (response.status === 200) {
-          setProjects(data);
-        } else {
-          throw new Error("Failed to fetch projects");
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_BASE_URL}/project/getallprojects/${id}`,
+      );
+      const data = await response.json();
+      if (response.status === 200) {
+        setProjects(data);
+      } else {
+        throw new Error("Failed to fetch projects");
       }
-    };
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchProjects();
   }, [id]);
+
+  const clearFilter = () => {
+    setSearchTerm("");
+    setStartDate("");
+    setEndDate("");
+    setIsFilterApplied(false);
+    fetchProjects();
+  };
 
   const getLatestValue = (array, field) => {
     if (!array || !Array.isArray(array) || array.length === 0) return "N/A";
@@ -302,6 +312,7 @@ const ProjectManager = () => {
     });
 
     setProjects(filteredProjects);
+    setIsFilterApplied(true);
   };
 
   const handleView = (project) => {
@@ -424,10 +435,18 @@ const ProjectManager = () => {
                 </div>
                 <button
                   onClick={applyDateFilter}
-                  className="bg-blue-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6"
+                  className="bg-blue-500 hover:bg-blue-600 transition text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6"
                 >
                   Apply Filter
                 </button>
+                {(isFilterApplied || searchTerm !== "") && (
+                  <button
+                    onClick={clearFilter}
+                    className="bg-gray-500 hover:bg-gray-600 transition text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6"
+                  >
+                    Clear Filter
+                  </button>
+                )}
               </>
             )}
           </div>

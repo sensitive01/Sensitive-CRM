@@ -8,6 +8,7 @@ import { getTotalPayments } from '../../api/services/projectServices';
 
 const PaymentTable = () => {
     const [payments, setPayments] = useState([]);
+    const [allPayments, setAllPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,6 +27,7 @@ const PaymentTable = () => {
             if (response.status === 200) {
                 const paymentData = Array.isArray(response.data) ? response.data : response.data.payments || [];
                 setPayments(paymentData);
+                setAllPayments(paymentData);
             } else {
                 console.error("Failed to fetch payment details:", response.status);
             }
@@ -69,7 +71,7 @@ const PaymentTable = () => {
         const start = new Date(startDate);
         const end = new Date(endDate);
     
-        const filteredPayments = payments.filter((payment) => {
+        const filteredPayments = allPayments.filter((payment) => {
             const paymentDate = new Date(payment.createdAt);
             return paymentDate >= start && paymentDate <= end;
         });
@@ -78,11 +80,12 @@ const PaymentTable = () => {
         setIsFilterApplied(true);
     };
 
-    const clearDateFilter = () => {
+    const clearFilter = () => {
         setStartDate("");
         setEndDate("");
         setIsFilterApplied(false);
-        fetchPaymentData();
+        setGlobalFilter("");
+        setPayments(allPayments);
     };
     
     const columns = useMemo(() => [
@@ -274,9 +277,9 @@ const PaymentTable = () => {
                         >
                             Apply Filter
                         </button>
-                        {isFilterApplied && (
+                        {(isFilterApplied || globalFilter) && (
                             <button
-                                onClick={clearDateFilter}
+                                onClick={clearFilter}
                                 className="bg-gray-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
                             >
                                 Clear Filter

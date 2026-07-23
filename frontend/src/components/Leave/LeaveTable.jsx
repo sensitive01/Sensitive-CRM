@@ -186,11 +186,12 @@ const LeaveTable = () => {
     setIsFilterApplied(true);
   };
 
-  const clearDateFilter = () => {
+  const clearFilter = () => {
     setStartDate("");
     setEndDate("");
     setIsFilterApplied(false);
-    fetchProjects();
+    setGlobalFilter("");
+    setLeaves(allLeaves);
   };
 
 
@@ -538,10 +539,10 @@ const LeaveTable = () => {
               >
                 Apply Filter
               </button>
-          {isFilterApplied && (
+          {(isFilterApplied || globalFilter) && (
             <button
-              onClick={clearDateFilter}
-              className="bg-gray-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
+              onClick={clearFilter}
+              className="bg-gray-500 hover:bg-gray-600 transition text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6 ml-4"
             >
               Clear Filter
             </button>

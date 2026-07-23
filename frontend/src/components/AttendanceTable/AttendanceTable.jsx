@@ -47,6 +47,7 @@ const AttendanceTableContent = () => {
     const [error, setError] = useState(null);
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+    const [isFilterApplied, setIsFilterApplied] = useState(false);
     const [role, setRole] = useState(localStorage.getItem("role") || "Superadmin");
 
     const [showWorkReportModal, setShowWorkReportModal] = useState(false);
@@ -166,6 +167,18 @@ const AttendanceTableContent = () => {
             return true;
         });
         setAttendanceRecords(filteredData);
+        setIsFilterApplied(true);
+    };
+
+    const clearFilter = () => {
+        setStartDate("");
+        setEndDate("");
+        setIsFilterApplied(false);
+        setGlobalFilter("");
+        const today = new Date().toISOString().split("T")[0];
+        setAttendanceRecords(allAttendanceRecords.filter(record =>
+            record.createdAt && new Date(record.createdAt).toISOString().split("T")[0] === today
+        ));
     };
 
     const handleSearch = (value) => setGlobalFilter(value.toLowerCase());
@@ -268,7 +281,14 @@ const AttendanceTableContent = () => {
 
     const { globalFilter, pageIndex, pageSize } = state;
 
-    if (loading) return <p className="text-center p-6">Loading attendance records...</p>;
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 mt-24">
+                <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-4"></div>
+                <p className="text-lg text-blue-600 font-semibold animate-pulse">Loading attendance records...</p>
+            </div>
+        );
+    }
     if (error) return <p className="text-center text-red-500 p-6">Error: {error}</p>;
 
     return (
@@ -298,7 +318,10 @@ const AttendanceTableContent = () => {
                         <label htmlFor="endDate" className="block">End Date</label>
                         <input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border border-blue-500 p-2 rounded w-32" />
                     </div>
-                    <button onClick={handleDateFilterChange} className="bg-blue-500 text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6">Apply Filter</button>
+                    <button onClick={handleDateFilterChange} className="bg-blue-500 hover:bg-blue-600 transition text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6">Apply Filter</button>
+                    {(isFilterApplied || globalFilter) && (
+                        <button onClick={clearFilter} className="bg-gray-500 hover:bg-gray-600 transition text-white px-6 py-2 rounded h-10 w-auto text-sm mt-6">Clear Filter</button>
+                    )}
                 </div>
 
                 <div className="flex space-x-4 flex-wrap">

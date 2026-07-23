@@ -14,6 +14,8 @@ import {
   MessageCircleQuestion,
   CreditCard,
   FileText,
+  Settings,
+  LogOut,
 } from "lucide-react";
 import { FaPowerOff } from "react-icons/fa";
 import logo from "../../assets/logo_white_ST.png";
@@ -346,8 +348,9 @@ const Topbar = () => {
                         setShowProfileMenu(false);
                         toggleProfile();
                       }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
+                      <User className="mr-2 h-4 w-4" />
                       Profile
                     </button>
                     <button
@@ -355,14 +358,16 @@ const Topbar = () => {
                         setShowProfileMenu(false);
                         setShowSettings(true);
                       }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
+                      <Settings className="mr-2 h-4 w-4" />
                       Settings
                     </button>
                     <button
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                      className="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                     >
+                      <LogOut className="mr-2 h-4 w-4" />
                       Log Out
                     </button>
                   </div>

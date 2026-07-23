@@ -16,6 +16,12 @@ const taskSchema = new mongoose.Schema({
   empName: {
     type: String, 
   },
+  issuedBy: {
+    type: String,
+  },
+  issuerName: {
+    type: String,
+  },
   description: {
     type: String,
 

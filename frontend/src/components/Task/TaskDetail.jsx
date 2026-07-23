@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ArrowLeft, Paperclip, Send, Clock, User, Briefcase, Info, Loader2, Trash2, X, ExternalLink, AlertTriangle, ChevronDown, FileText } from "lucide-react";
+import { ArrowLeft, Paperclip, Send, Clock, User, Briefcase, Info, Loader2, Trash2, X, ExternalLink, AlertTriangle, ChevronDown, ChevronUp, FileText } from "lucide-react";
 
 const TaskDetail = () => {
   const { id } = useParams();
@@ -24,6 +24,7 @@ const TaskDetail = () => {
   const [replyText, setReplyText] = useState("");
   const [replyAttachment, setReplyAttachment] = useState(null);
   const [submittingReply, setSubmittingReply] = useState(false);
+  const [expandedReplies, setExpandedReplies] = useState({});
   const empId = localStorage.getItem("empId");
   const role = localStorage.getItem("role");
   const empName = localStorage.getItem("name");
@@ -36,7 +37,7 @@ const TaskDetail = () => {
   let allDocuments = [];
   if (task && task.attachments) {
     const taskAttachments = Array.isArray(task.attachments) ? task.attachments : [task.attachments];
-    allDocuments.push(...taskAttachments.map(url => ({
+    allDocuments.push(...taskAttachments.filter(Boolean).map(url => ({
       url,
       sender: task.empName || task.empId || "Task Creator"
     })));
@@ -45,7 +46,7 @@ const TaskDetail = () => {
     task.comments.forEach(c => {
       if (c.attachments || c.attachment) {
         const commentAttachments = Array.isArray(c.attachments) ? c.attachments : [c.attachments || c.attachment];
-        allDocuments.push(...commentAttachments.map(url => ({
+        allDocuments.push(...commentAttachments.filter(Boolean).map(url => ({
           url,
           sender: c.empName || c.empId || "Commenter"
         })));
@@ -54,7 +55,7 @@ const TaskDetail = () => {
         c.replies.forEach(r => {
           if (r.attachments || r.attachment) {
             const replyAttachments = Array.isArray(r.attachments) ? r.attachments : [r.attachments || r.attachment];
-            allDocuments.push(...replyAttachments.map(url => ({
+            allDocuments.push(...replyAttachments.filter(Boolean).map(url => ({
               url,
               sender: r.empName || r.empId || "Replier"
             })));
@@ -409,9 +410,27 @@ const TaskDetail = () => {
               {/* Task Info Card */}
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-                <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-6 leading-tight tracking-tight">
+                <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2 leading-tight tracking-tight">
                   {task.task}
                 </h1>
+                {(task.empName || task.issuerName) && (
+                  <div className="text-sm font-medium text-slate-500 mb-6 flex items-center flex-wrap gap-y-2">
+                    <User className="w-4 h-4 mr-2" />
+                    {task.empName && (
+                      <>
+                        Issued to: <span className="ml-1 text-slate-800">{task.empName}</span>
+                      </>
+                    )}
+                    {task.empName && task.issuerName && (
+                      <span className="mx-3 text-slate-300">|</span>
+                    )}
+                    {task.issuerName && (
+                      <>
+                        Issued by: <span className="ml-1 text-slate-800">{task.issuerName}</span>
+                      </>
+                    )}
+                  </div>
+                )}
 
                 <div className="prose max-w-none">
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center mb-3">
@@ -426,14 +445,14 @@ const TaskDetail = () => {
                   </div>
                 </div>
 
-                {task.attachments && (Array.isArray(task.attachments) ? task.attachments : [task.attachments]).length > 0 && (
+                {task.attachments && (Array.isArray(task.attachments) ? task.attachments : [task.attachments]).filter(Boolean).length > 0 && (
                   <div className="mt-8 p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex flex-col gap-4">
                     <div>
                       <h3 className="text-sm font-bold text-indigo-900 mb-1">Attached Resources</h3>
                       <p className="text-xs text-indigo-600/70">Files attached to the main task description.</p>
                     </div>
                     <div className="flex flex-wrap gap-4">
-                      {(Array.isArray(task.attachments) ? task.attachments : [task.attachments]).map((url, idx) => (
+                      {(Array.isArray(task.attachments) ? task.attachments : [task.attachments]).filter(Boolean).map((url, idx) => (
                         <React.Fragment key={idx}>
                           {renderAttachmentPreview(url, `Attachment ${idx + 1}`)}
                         </React.Fragment>
@@ -678,8 +697,18 @@ const TaskDetail = () => {
 
                             {/* Replies List */}
                             {comment.replies && comment.replies.length > 0 && (
-                              <div className="mt-4 space-y-4 pl-4 border-l-2 border-slate-100 ml-2">
-                                {comment.replies.map((reply, rIdx) => {
+                              <div className="mt-4">
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedReplies(prev => ({ ...prev, [comment._id]: !prev[comment._id] }))}
+                                  className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-medium bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-full transition-colors mb-4"
+                                >
+                                  {expandedReplies[comment._id] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                  {expandedReplies[comment._id] ? "Hide Replies" : `View ${comment.replies.length} Reply(s)`}
+                                </button>
+                                {expandedReplies[comment._id] && (
+                                  <div className="space-y-4 pl-4 border-l-2 border-slate-100 ml-2">
+                                    {comment.replies.map((reply, rIdx) => {
                                   const isMyReply = empId === reply.empId;
                                   return (
                                     <div key={rIdx} className="flex gap-3 group">
@@ -768,8 +797,10 @@ const TaskDetail = () => {
                                         )}
                                       </div>
                                     </div>
-                                  );
-                                })}
+                                    );
+                                    })}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>

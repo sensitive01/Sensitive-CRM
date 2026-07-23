@@ -123,6 +123,12 @@ function TaskForm() {
         formData.append("task", formTask.task);
         formData.append("empId", formTask.empId);
         if (formTask.empName) formData.append("empName", formTask.empName);
+        
+        const issuerId = localStorage.getItem("empId");
+        const issuerName = localStorage.getItem("name");
+        if (issuerId) formData.append("issuedBy", issuerId);
+        if (issuerName) formData.append("issuerName", issuerName);
+
         formData.append("description", formTask.description);
         formData.append("timeline", formTask.timeline);
         formData.append("status", formTask.status);
