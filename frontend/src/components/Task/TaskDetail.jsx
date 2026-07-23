@@ -543,7 +543,7 @@ const TaskDetail = () => {
 
                 <div className="space-y-8">
                   {task.comments && task.comments.length > 0 ? (
-                    task.comments.map((comment, idx) => {
+                    [...task.comments].reverse().map((comment, idx) => {
                       const isMyComment = empId === comment.empId;
                       return (
                         <div key={idx} className="flex gap-4 group">
